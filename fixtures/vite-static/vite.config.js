@@ -3,7 +3,7 @@ import imagemeta from '@imagemeta/vite';
 
 export default {
   plugins: [imagemeta({
-    apiBase: process.env.IMAGEMETA_API_BASE || 'https://dos-biz-stage.vercel.app/t23/v1',
+    apiBase: process.env.IMAGEMETA_API_BASE, // 필수 — 기본 주소 없음 (DA-3)
     apiKey: process.env.IMAGEMETA_API_KEY,
     lang: process.env.IMAGEMETA_LANG || 'ko',
     cacheTtlSeconds: 3600,

@@ -1,7 +1,7 @@
 /**
  * @imagemeta/core — 메타 API 클라이언트 + 디스크 캐시 (biz-dev-05 ②③ 공통). Node 18+, 의존성 0.
  *
- *   const client = createClient({ apiKey: process.env.IMAGEMETA_API_KEY, apiBase: 'https://dos-biz-stage.vercel.app/t23/v1', lang: 'ko', cacheFile: '.cache/imagemeta.json' })
+ *   const client = createClient({ apiKey: process.env.IMAGEMETA_API_KEY, apiBase: process.env.IMAGEMETA_API_BASE, lang: 'ko', cacheFile: '.cache/imagemeta.json' })
  *   const metas = await client.fetchMany(ids)   // Map<id, Meta|null>  — 캐시에 있고 TTL 안이면 요청 0
  *   client.stats                                // { requests, fetched, cached, missing }
  *
