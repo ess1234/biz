@@ -1,0 +1,27 @@
+{
+  "name": "@imagemeta/vite",
+  "version": "0.1.0",
+  "description": "Vite 빌드 연동 — 빌드 때 /i/{id} 이미지에 alt 를 박고 JSON-LD 를 넣는다 (biz-dev-05 ②). 이름은 자리표시자",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "vite": ">=4"
+  },
+  "dependencies": {
+    "@imagemeta/core": "0.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

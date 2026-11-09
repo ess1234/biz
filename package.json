@@ -1,0 +1,13 @@
+{
+  "name": "imagemeta-client",
+  "private": true,
+  "version": "0.1.0",
+  "description": "고객 쪽 패키지(자리표시자 이름 imagemeta — 제품명 확정 때 한 곳에서 치환): core 메타 클라이언트 · vite 빌드 연동 · 픽스처",
+  "workspaces": [
+    "packages/*",
+    "fixtures/*"
+  ],
+  "scripts": {
+    "test:vite": "npm --workspace fixtures/vite-static run build"
+  }
+}

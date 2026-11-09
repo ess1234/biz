@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>픽스처 — 빌드 연동</title>
+</head>
+<body>
+  <h1>상품 사진</h1>
+  <!-- alt 없음 → 빌드가 채운다 -->
+  <img src="{{IMG}}/i/{{ID1}}" width="400">
+  <img src="{{IMG}}/i/{{ID2}}/green-tent?w=400" loading="lazy">
+  <!-- alt 있음 → 유지 -->
+  <img src="{{IMG}}/i/{{ID1}}" alt="손으로 쓴 설명">
+  <!-- private → 설명 없음, alt 그대로 비어 있음 -->
+  <img src="{{IMG}}/i/{{ID_PRIVATE}}">
+  <!-- 우리 이미지 아님 -->
+  <img src="https://example.com/x.jpg">
+  <div id="app"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

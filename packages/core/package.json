@@ -1,0 +1,21 @@
+{
+  "name": "@imagemeta/core",
+  "version": "0.1.0",
+  "description": "메타 API 클라이언트 + 디스크 캐시 — 빌드 연동·서버 컴포넌트 공통 (biz-dev-05). 이름은 자리표시자",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
