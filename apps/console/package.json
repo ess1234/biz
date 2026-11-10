@@ -1,0 +1,23 @@
+{
+  "name": "@biz/console",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "B2B 콘솔 (biz-dev-08). 서버는 dos /t23/v1 (T23_PRODUCT=biz).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "@tanstack/react-query": "^5.104.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.2",
+    "vite": "^5.4.8"
+  }
+}

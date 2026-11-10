@@ -4,3 +4,4 @@ dist/
 fixtures/*/index.html
 fixtures/*/src/main.jsx
 .env*
+!.env.example

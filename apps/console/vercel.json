@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/t23/v1/:path*", "destination": "https://dos-biz-stage.vercel.app/t23/v1/:path*" },
+    { "source": "/((?!assets/|_vercel/|js/).*)", "destination": "/index.html" }
+  ]
+}
