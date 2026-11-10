@@ -1,6 +1,6 @@
 /// 4-2 홈 (biz-dev-08): 시작하기 4단계(끝나면 한 줄로 접힘) + 이번 달 한도 + 최근 이미지. 연동 카드의 키별 요청 수는 2차(DC-6) — 1차는 키 목록만.
 import { useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api, type AssetSummary } from '../lib/api';
@@ -14,8 +14,10 @@ const VIS_LABEL: Record<string, string> = { site: '사이트', public: '공개',
 
 function Thumb({ a }: { a: AssetSummary }) {
   const url = useFileUrl('thumb256', a.has_thumb ? a.id : null);
+  const nav = useNavigate();
   return (
-    <div className="cell" title={a.caption ?? a.file_name ?? ''}>
+    <div className="cell" title={a.caption ?? a.file_name ?? ''} role="button" tabIndex={0} style={{ cursor: 'pointer' }}
+      onClick={() => nav(`/images/${a.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') nav(`/images/${a.id}`); }}>
       {url && <img src={url} alt={a.caption ?? ''} loading="lazy" />}
       <span className={`vis ${a.visibility}`}>{VIS_LABEL[a.visibility] ?? a.visibility}</span>
     </div>
@@ -105,7 +107,7 @@ export function HomePage() {
       </div>
 
       <section className="bc-sec">
-        <h3>최근 이미지</h3>
+        <h3>최근 이미지 <Link className="bc-btn small" to="/images" style={{ marginLeft: 8 }}>모두 보기</Link></h3>
         {recent.isLoading && <p className="bc-muted">불러오는 중…</p>}
         {recent.data && recent.data.items.length === 0 && <p className="bc-muted">아직 올린 이미지가 없어요.</p>}
         {recent.data && recent.data.items.length > 0 && <div className="bc-thumbs">{recent.data.items.map((a) => <Thumb key={a.id} a={a} />)}</div>}

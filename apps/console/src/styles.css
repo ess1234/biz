@@ -93,3 +93,55 @@ h1, h2, h3 { margin: 0; }
 .bc-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
 
 .bc-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; display: none; z-index: 50; }
+
+/* 2차 — 이미지 목록 */
+.bc-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.bc-search { display: flex; gap: 6px; flex: 1 1 320px; }
+.bc-search input { flex: 1; padding: 8px 12px; border: 1px solid var(--bc-line); border-radius: 8px; font: inherit; background: #fff; }
+.bc-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.bc-tabs button { border: 1px solid var(--bc-line); background: var(--bc-card); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.bc-tabs button.on { background: var(--bc-primary-soft); border-color: #bfd7fb; color: var(--bc-primary); font-weight: 700; }
+.bc-tabs button:disabled { opacity: .4; cursor: default; }
+.bc-actionbar { position: sticky; top: 52px; z-index: 4; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 10px 14px; background: #0f172a; color: #fff; border-radius: 10px; }
+.bc-actionbar .bc-muted { color: #94a3b8; }
+.bc-actionbar .bc-btn { background: #1e293b; border-color: #334155; color: #fff; }
+.bc-actionbar .bc-btn.danger { color: #fca5a5; border-color: #7f1d1d; }
+.bc-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.bc-cell { background: var(--bc-card); border: 1px solid var(--bc-line); border-radius: 10px; overflow: hidden; cursor: pointer; outline: 2px solid transparent; outline-offset: -2px; }
+.bc-cell.selected { outline-color: var(--bc-primary); }
+.bc-cell .img { position: relative; aspect-ratio: 1; background: #e5e7eb; }
+.bc-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bc-cell .chk { position: absolute; top: 6px; left: 6px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.25); }
+.bc-cell.selected .chk { background: var(--bc-primary); }
+.bc-cell .vis { position: absolute; left: 6px; bottom: 6px; font-size: 11px; color: #fff; padding: 1px 8px; border-radius: 999px; background: rgba(100,116,139,.9); }
+.bc-cell .vis.site { background: rgba(0,113,227,.92); } .bc-cell .vis.public { background: rgba(4,120,87,.92); }
+.bc-cell .meta { display: flex; align-items: center; gap: 4px; padding: 6px 8px; font-size: 12px; }
+.bc-cell .meta .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--bc-muted); }
+.bc-cell .meta .bc-badge { margin-left: 0; }
+.bc-uplist { list-style: none; margin: 10px 0 0; padding: 0; max-height: 240px; overflow: auto; }
+.bc-uplist li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.bc-uplist .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-uplist progress { width: 120px; }
+.bc-dropmask { position: fixed; inset: 0; background: rgba(0,113,227,.08); border: 3px dashed var(--bc-primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--bc-primary); pointer-events: none; z-index: 40; }
+
+/* 2차 — 이미지 상세 */
+.bc-detail { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .bc-detail { grid-template-columns: 1fr; } }
+.bc-detail .stage { background: #0f172a; border-radius: 12px; min-height: 320px; display: flex; align-items: center; justify-content: center; position: sticky; top: 64px; overflow: hidden; }
+@media (max-width: 900px) { .bc-detail .stage { position: static; } }
+.bc-detail .stage img { max-width: 100%; max-height: 78vh; display: block; }
+.bc-detail .side { display: grid; gap: 12px; }
+.bc-textarea { display: block; width: 100%; margin-top: 8px; padding: 9px 10px; border: 1px solid var(--bc-line); border-radius: 8px; font: inherit; resize: vertical; }
+.bc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.bc-chip { display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 13px; }
+.bc-chip button { border: 0; background: none; cursor: pointer; color: var(--bc-muted); font-size: 11px; }
+.bc-chips input { border: 1px dashed var(--bc-line); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; }
+.bc-seg { display: flex; gap: 6px; margin-top: 10px; }
+.bc-seg button { flex: 1; padding: 8px; border: 1px solid var(--bc-line); border-radius: 8px; background: #fff; font: inherit; cursor: pointer; }
+.bc-seg button.on.site { background: var(--bc-primary); border-color: var(--bc-primary); color: #fff; }
+.bc-seg button.on.public { background: var(--bc-ok); border-color: var(--bc-ok); color: #fff; }
+.bc-seg button.on.private { background: #475569; border-color: #475569; color: #fff; }
+.bc-seg button:disabled { opacity: .6; cursor: default; }
+.bc-copy { margin-top: 10px; }
+.bc-copy .line { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.bc-copy code { flex: 1; min-width: 0; font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #f3f4f6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
