@@ -1,10 +1,11 @@
 {
-  "name": "imagemeta-client",
+  "name": "biz",
   "private": true,
   "version": "0.1.0",
-  "description": "고객 쪽 패키지(자리표시자 이름 imagemeta — 제품명 확정 때 한 곳에서 치환): core 메타 클라이언트 · vite 빌드 연동 · 픽스처",
+  "description": "B2B 프런트 저장소 (DA-2 수정 11-10): apps/console(B2B 콘솔, 예정) · packages/core·vite(고객용 SDK, 자리표시자 이름 imagemeta) · fixtures",
   "workspaces": [
     "packages/*",
+    "apps/*",
     "fixtures/*"
   ],
   "scripts": {
