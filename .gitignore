@@ -6,3 +6,4 @@ fixtures/*/src/main.jsx
 .env*
 !.env.example
 apps/console/public/js/
+.vercel/

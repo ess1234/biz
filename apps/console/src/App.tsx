@@ -102,7 +102,8 @@ function LegacyRedirect() {
   const next = q.get('next');
   if (next) q.set('next', map(next));
   const target = map(loc.pathname);
-  return <Navigate to={`${target}${q.toString() ? `?${q}` : ''}`} replace />;
+  // hash 유지 — 메일 링크 로그인 토큰이 #access_token 으로 온다 (옛 /me/auth/callback 이 Supabase 허용 목록에 있어도 끊기지 않게)
+  return <Navigate to={`${target}${q.toString() ? `?${q}` : ''}${loc.hash}`} replace />;
 }
 
 export function App() {
