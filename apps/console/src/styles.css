@@ -145,3 +145,31 @@ h1, h2, h3 { margin: 0; }
 .bc-copy { margin-top: 10px; }
 .bc-copy .line { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
 .bc-copy code { flex: 1; min-width: 0; font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #f3f4f6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
+
+/* 3차 — 연동 · 사용량·청구 · 운영 */
+.bc-nav .bc-spacer { flex: 1; min-height: 16px; }
+.bc-nav a.bc-admin { color: var(--bc-muted); font-size: 13px; border-top: 1px solid var(--bc-line); border-radius: 0; padding-top: 12px; }
+.bc-nav a.bc-admin.active { color: var(--bc-primary); background: none; }
+@media (max-width: 760px) { .bc-nav a.bc-admin { border-top: 0; padding-top: 9px; } }
+.bc-code { margin-top: 12px; }
+.bc-code .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bc-code pre { margin: 6px 0 0; background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+.bc-keycode { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #f1f5f9; padding: 2px 6px; border-radius: 6px; margin-left: 6px; user-select: all; }
+.bc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.bc-big { font-size: 20px; font-weight: 800; margin-top: 4px; }
+.bc-select { padding: 4px 8px; border: 1px solid var(--bc-line); border-radius: 8px; font: inherit; font-size: 13px; margin-left: 6px; background: #fff; }
+.bc-days .bar { height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.bc-days .bar > i { display: block; height: 100%; background: var(--bc-primary); }
+.bc-days td { padding: 4px 8px; }
+.bc-sheet-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px; z-index: 30; overflow: auto; }
+.bc-sheet { background: #fff; border-radius: 12px; padding: 24px; max-width: 760px; width: 100%; }
+.bc-plain { list-style: none; padding: 0; margin: 8px 0 0; }
+.bc-plain li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+.bc-mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; word-break: break-all; }
+@media print {
+  body * { visibility: hidden; }
+  .bc-sheet, .bc-sheet * { visibility: visible; }
+  .bc-sheet-backdrop { position: absolute; inset: 0; background: none; padding: 0; }
+  .bc-sheet { box-shadow: none; max-width: none; }
+  .bc-noprint { display: none !important; }
+}

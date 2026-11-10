@@ -1,5 +1,5 @@
 /// B2B 콘솔 셸 (biz-dev-08 3절·4절): 상단 바(로고 자리표시자 · 워크스페이스 · 한도 알림 · 사람 메뉴) + 메뉴 다섯 개.
-/// 1차: 셸 · 첫 로그인 · 홈 · 설정. 2차: 이미지 목록 · 상세. 연동 · 사용량·청구는 3차 — 그 전엔 자리만 있다.
+/// 1차: 셸 · 첫 로그인 · 홈 · 설정. 2차: 이미지 목록 · 상세. 3차: 연동 · 사용량·청구 · 운영(운영자만, 메뉴 맨 아래).
 import React, { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom';
@@ -12,7 +12,9 @@ import { METRIC_LABEL, useUsage } from './lib/queries';
 import { HomePage } from './pages/Home';
 import { ImageDetailPage } from './pages/ImageDetail';
 import { ImagesPage } from './pages/Images';
-import { LaterPage } from './pages/Later';
+import { AdminAccountPage, AdminPage } from './pages/Admin';
+import { BillingPage } from './pages/Billing';
+import { IntegrationsPage } from './pages/Integrations';
 import { SettingsPage } from './pages/Settings';
 import { WelcomePage } from './pages/Welcome';
 
@@ -74,6 +76,7 @@ function Shell() {
       <div className="bc-body">
         <nav className="bc-nav" aria-label="메뉴">
           {MENU.map(([to, label, end]) => <NavLink key={to} to={to} end={end}>{label}</NavLink>)}
+          {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin">운영</NavLink></>}
         </nav>
         <main className="bc-main"><Outlet /></main>
       </div>
@@ -91,6 +94,8 @@ function LegacyRedirect() {
     if (rest.startsWith('/upload') || rest.startsWith('/search') || rest.startsWith('/trash')) return '/images';
     if (rest.startsWith('/sites')) return '/integrations';
     if (rest.startsWith('/usage')) return '/billing';
+    if (rest.startsWith('/billing')) return '/billing?tab=invoices';
+    if (rest.startsWith('/workspace')) return '/integrations?tab=api';
     return rest;
   };
   const q = new URLSearchParams(loc.search);
@@ -115,8 +120,10 @@ export function App() {
               <Route index element={<HomePage />} />
               <Route path="images" element={<ImagesPage />} />
               <Route path="images/:id" element={<ImageDetailPage />} />
-              <Route path="integrations" element={<LaterPage title="연동" round={3} body="사이트 키 · 빌드 연동 · API 키를 여기서 관리해요." />} />
-              <Route path="billing" element={<LaterPage title="사용량 · 청구" round={3} body="이번 달 사용량 · 청구서 · 플랜이 탭으로 들어와요." />} />
+              <Route path="integrations" element={<IntegrationsPage />} />
+              <Route path="billing" element={<BillingPage />} />
+              <Route path="admin" element={<AdminPage />} />
+              <Route path="admin/acc/:id" element={<AdminAccountPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

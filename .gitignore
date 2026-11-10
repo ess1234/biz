@@ -5,3 +5,4 @@ fixtures/*/index.html
 fixtures/*/src/main.jsx
 .env*
 !.env.example
+apps/console/public/js/

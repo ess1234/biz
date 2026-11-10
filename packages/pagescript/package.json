@@ -1,0 +1,8 @@
+{
+  "name": "@imagemeta/pagescript",
+  "private": true,
+  "version": "0.1.0",
+  "description": "고객 페이지에 넣는 스크립트 한 줄 (자리표시자 이름 imagemeta). sai/pagescript 에서 옮김(DA-2). 빌드 결과는 콘솔이 /js/ 로 서빙",
+  "type": "module",
+  "scripts": { "build": "node build.mjs" }
+}
