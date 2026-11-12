@@ -1,0 +1,19 @@
+{
+  "name": "fixture-vite-vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Vue 3 + Vite 고객 사이트 흉내 — @imagemeta/vite 가 .vue 템플릿의 정적 <img> 에 alt 를 넣는지 검사. node check.mjs (가짜 메타 서버, DB 없음)",
+  "scripts": {
+    "build": "vite build",
+    "check": "node check.mjs"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@imagemeta/vite": "0.1.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^5.4.8"
+  }
+}

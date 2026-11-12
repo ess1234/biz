@@ -10,6 +10,7 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 | `packages/vite` | `@imagemeta/vite` — 빌드 연동 | v0.1 |
 | `packages/pagescript` | 고객 페이지 스크립트 한 줄(imagemeta.js). 콘솔 빌드 전에 `apps/console/public/js/` 로 빌드 → 콘솔이 `/js/` 로 서빙 | sai/pagescript 에서 옮김 |
 | `fixtures/vite-static` | 빌드 연동 검사용 사이트 — `dos/scripts/biz_client_fixture.py` 가 채워 빌드 | |
+| `fixtures/vite-vue` | Vue 3 + Vite 빌드 연동 검사 — `node check.mjs`(가짜 메타 서버, DB 없음): .vue 정적 img · 자식 컴포넌트 · 손으로 쓴 alt · `:alt` · `:src` · 비공개 · 남의 이미지 · JSON-LD · 캐시 | 14/14 (11-12) |
 
 ## 콘솔
 

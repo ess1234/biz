@@ -7,3 +7,4 @@ fixtures/*/src/main.jsx
 !.env.example
 apps/console/public/js/
 .vercel/
+!fixtures/vite-vue/index.html
