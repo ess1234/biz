@@ -6,10 +6,11 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 | 위치 | 무엇 | 상태 |
 |---|---|---|
 | `apps/console` | B2B 콘솔 (biz-dev-08 화면 설계) — Vercel `biz-console-stage` | 1~3차 완료 · 교체 배포(11-10) |
-| `packages/core` | `@imagemeta/core` — 메타 묶음 조회 · alt 주입 · JSON-LD | v0.1 |
+| `packages/core` | `@imagemeta/core` — 메타 묶음 조회 · alt 주입 · JSON-LD + 빌드 뒤 주입 CLI `imagemeta inject` · `@imagemeta/core/inject` | v0.1 · CLI 11-12 |
 | `packages/vite` | `@imagemeta/vite` — 빌드 연동 | v0.1 |
 | `packages/pagescript` | 고객 페이지 스크립트 한 줄(imagemeta.js). 콘솔 빌드 전에 `apps/console/public/js/` 로 빌드 → 콘솔이 `/js/` 로 서빙 | sai/pagescript 에서 옮김 |
 | `fixtures/vite-static` | 빌드 연동 검사용 사이트 — `dos/scripts/biz_client_fixture.py` 가 채워 빌드 | |
+| `fixtures/postbuild` | CLI 검사 — Next 정적 export(out/) · webpack(dist/) 결과물 흉내, `node check.mjs`(가짜 메타 서버, DB 없음) | 26/26 (11-12) |
 | `fixtures/vite-vue` | Vue 3 + Vite 빌드 연동 검사 — `node check.mjs`(가짜 메타 서버, DB 없음): .vue 정적 img · 자식 컴포넌트 · 손으로 쓴 alt · `:alt` · `:src` · 비공개 · 남의 이미지 · JSON-LD · 캐시 | 14/14 (11-12) |
 
 ## 콘솔
@@ -21,3 +22,16 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 
 - 패키지 이름 `imagemeta` 는 자리표시자 — 제품명이 정해지면 한 곳에서 바꾼다. 코드에 호스트를 박지 않는다(`apiBase` 는 필수 인자).
 - npm 11 은 install-scripts 를 막는다 → esbuild 는 `npm rebuild esbuild`.
+
+## 빌드 뒤 주입 CLI — Vite 가 아닌 빌드(Next 정적 export · Gatsby · Astro · Angular · webpack)
+
+```bash
+IMAGEMETA_API_KEY=<읽기 API 키> npx imagemeta inject out --api-base https://<dos>/t23/v1
+```
+
+- 결과 폴더의 `.html` 만 고친다: `<img src|data-src="…/i/{id}">` 에 alt + `data-meta-rev`, `<head>` 에 ImageObject JSON-LD 1개(`data-imagemeta`). JS 번들 안의 이미지는 그대로(페이지 스크립트 · 서버 렌더 몫).
+- 언어는 페이지의 `<html lang>`(ko · en · ja · zh)을 따른다 — 없으면 `--lang`. 언어마다 요청 · 캐시를 따로(`.cache/imagemeta.<lang>.json`).
+- 사람이 쓴 alt 는 유지(`--force` 로만 덮음). `alt=""` 도 기본은 유지(꾸밈 이미지) — Next `<Image alt="">` 처럼 비워 둔 사이트는 `--fill-empty-alt`.
+- 다시 돌려도 안전: 우리 alt 는 rev 가 바뀔 때만 다시 쓰고, JSON-LD 는 중복 없이 바꿔 쓴다.
+- 메타를 못 받으면 경고만 하고 종료 0(빌드를 막지 않음). `--strict` 면 종료 1. `--dry-run` 은 쓰지 않고 바뀔 파일만.
+- API 키는 환경 변수로만 받는다(`--api-key` 는 거절 — 명령줄 기록에 남지 않게).

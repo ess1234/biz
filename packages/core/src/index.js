@@ -34,7 +34,7 @@ export function createClient(opts) {
   if (!apiBase) throw new Error('[imagemeta] apiBase 가 필요합니다 (예: https://<dos>/t23/v1)');
   const apiKey = opts.apiKey || '';
   const lang = opts.lang || 'ko';
-  const cacheFile = opts.cacheFile ?? '.cache/imagemeta.json';
+  const cacheFile = opts.cacheFile === undefined ? '.cache/imagemeta.json' : opts.cacheFile;   // null = 캐시 없음 (?? 는 null 도 기본값으로 바꿔 버렸다)
   const ttlMs = (opts.cacheTtlSeconds ?? 3600) * 1000;
   const fetchImpl = opts.fetch || globalThis.fetch;
   const stats = { requests: 0, fetched: 0, cached: 0, missing: 0 };
@@ -84,7 +84,7 @@ export function createClient(opts) {
 }
 
 /** HTML/JSX 문자열의 <img …> 중 src 가 /i/{id} 이고 alt 가 없는 태그에 alt="…" 를 넣는다. 이미 alt 가 있으면 그대로(force 면 덮음). 반환 { code, changed, skipped }. */
-export function injectAlt(code, metas, { force = false, imageHosts, attr = 'alt' } = {}) {
+export function injectAlt(code, metas, { force = false, fillEmpty = false, imageHosts, attr = 'alt' } = {}) {
   let changed = 0, skipped = 0;
   const out = code.replace(/<img\b([^>]*?)(\/?)>/gi, (tag, attrs, selfClose) => {
     const src = /\bsrc\s*=\s*(["'])(.*?)\1/i.exec(attrs);
@@ -93,10 +93,16 @@ export function injectAlt(code, metas, { force = false, imageHosts, attr = 'alt'
     if (!ids.length) return tag;
     const meta = metas.get(ids[0]);
     if (!meta || !meta.alt) { skipped++; return tag; }
-    const hasAlt = /\balt\s*=/i.test(attrs);
-    if (hasAlt && !force) { skipped++; return tag; }
+    // fillEmpty: alt="" 를 빈칸으로 본다 (Next <Image> 처럼 alt 가 필수라 alt="" 로 두는 사이트용). 기본은 alt="" 도 사람의 선택(꾸밈 이미지)으로 존중
+    const emptyAlt = /\balt\s*=\s*(["'])\s*\1/i.test(attrs);
+    const hasAlt = /\balt\s*=/i.test(attrs) && !(fillEmpty && emptyAlt);
+    // 우리가 넣은 alt(data-meta-rev 표시)는 rev 가 바뀌었을 때만 다시 쓴다 — 사람이 쓴 alt 는 force 로만 덮는다
+    const ourRev = /\bdata-meta-rev\s*=\s*(["'])(.*?)\1/i.exec(attrs);
+    if (hasAlt && !force && !ourRev) { skipped++; return tag; }
+    if (ourRev && !force && ourRev[2] === String(meta.rev ?? '')) { skipped++; return tag; }
     const esc = meta.alt.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    const cleaned = hasAlt ? attrs.replace(/\s*\balt\s*=\s*(["']).*?\1/i, '') : attrs;
+    let cleaned = (hasAlt || (fillEmpty && emptyAlt)) ? attrs.replace(/\s*\balt\s*=\s*(["']).*?\1/i, '') : attrs;
+    if (ourRev) cleaned = cleaned.replace(/\s*\bdata-meta-rev\s*=\s*(["']).*?\1/i, '');
     changed++;
     return `<img${cleaned.replace(/\s*$/, '')} ${attr}="${esc}" data-meta-rev="${meta.rev ?? ''}"${selfClose ? ' /' : ''}>`;
   });

@@ -39,5 +39,5 @@ export interface Client {
 export const ID_RE: RegExp;
 export function extractIds(text: string, imageHosts?: string[]): string[];
 export function createClient(opts: ClientOptions): Client;
-export function injectAlt(code: string, metas: Map<string, Meta | null>, opts?: { force?: boolean; imageHosts?: string[]; attr?: string }): { code: string; changed: number; skipped: number };
+export function injectAlt(code: string, metas: Map<string, Meta | null>, opts?: { force?: boolean; fillEmpty?: boolean; imageHosts?: string[]; attr?: string }): { code: string; changed: number; skipped: number };
 export function jsonLdScript(metas: Map<string, Meta | null>): string;
