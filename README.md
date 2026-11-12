@@ -5,7 +5,7 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 
 | 위치 | 무엇 | 상태 |
 |---|---|---|
-| `apps/console` | B2B 콘솔 (biz-dev-08 화면 설계) — Vercel `biz-console-stage` 로 갈 것 | 1~3차 완료 (11-10). 아직 sai 의 biz 빌드가 서빙 중 |
+| `apps/console` | B2B 콘솔 (biz-dev-08 화면 설계) — Vercel `biz-console-stage` | 1~3차 완료 · 교체 배포(11-10) |
 | `packages/core` | `@imagemeta/core` — 메타 묶음 조회 · alt 주입 · JSON-LD | v0.1 |
 | `packages/vite` | `@imagemeta/vite` — 빌드 연동 | v0.1 |
 | `packages/pagescript` | 고객 페이지 스크립트 한 줄(imagemeta.js). 콘솔 빌드 전에 `apps/console/public/js/` 로 빌드 → 콘솔이 `/js/` 로 서빙 | sai/pagescript 에서 옮김 |
