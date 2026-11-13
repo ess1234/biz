@@ -6,10 +6,11 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 | 위치 | 무엇 | 상태 |
 |---|---|---|
 | `apps/console` | B2B 콘솔 (biz-dev-08 화면 설계) — Vercel `biz-console-stage` | 1~3차 완료 · 교체 배포(11-10) |
-| `packages/core` | `@imagemeta/core` — 메타 묶음 조회 · alt 주입 · JSON-LD + 빌드 뒤 주입 CLI `imagemeta inject` · `@imagemeta/core/inject` | v0.1 · CLI 11-12 |
+| `packages/core` | `@imagemeta/core` — 메타 묶음 조회 · alt 주입 · JSON-LD + CLI `imagemeta`(upload · wait · rewrite · list · describe · visibility · usage · sites list · inject) | v0.1 · CLI 11-12 · 에이전트 명령 11-13 |
 | `packages/vite` | `@imagemeta/vite` — 빌드 연동 | v0.1 |
 | `packages/pagescript` | 고객 페이지 스크립트 한 줄(imagemeta.js). 콘솔 빌드 전에 `apps/console/public/js/` 로 빌드 → 콘솔이 `/js/` 로 서빙 | sai/pagescript 에서 옮김 |
 | `fixtures/vite-static` | 빌드 연동 검사용 사이트 — `dos/scripts/biz_client_fixture.py` 가 채워 빌드 | |
+| `fixtures/agent` | 에이전트용 명령 검사 — 고객 프로젝트 흉내 + 가짜 서버(등록 → PUT → 완료 → 분석 · 중복 · 쪽 넘김 · 409 · 429), `node check.mjs` | 34/34 (11-13) |
 | `fixtures/postbuild` | CLI 검사 — Next 정적 export(out/) · webpack(dist/) 결과물 흉내, `node check.mjs`(가짜 메타 서버, DB 없음) | 26/26 (11-12) |
 | `fixtures/vite-vue` | Vue 3 + Vite 빌드 연동 검사 — `node check.mjs`(가짜 메타 서버, DB 없음): .vue 정적 img · 자식 컴포넌트 · 손으로 쓴 alt · `:alt` · `:src` · 비공개 · 남의 이미지 · JSON-LD · 캐시 | 14/14 (11-12) |
 
@@ -35,3 +36,19 @@ IMAGEMETA_API_KEY=<읽기 API 키> npx imagemeta inject out --api-base https://<
 - 다시 돌려도 안전: 우리 alt 는 rev 가 바뀔 때만 다시 쓰고, JSON-LD 는 중복 없이 바꿔 쓴다.
 - 메타를 못 받으면 경고만 하고 종료 0(빌드를 막지 않음). `--strict` 면 종료 1. `--dry-run` 은 쓰지 않고 바뀔 파일만.
 - API 키는 환경 변수로만 받는다(`--api-key` 는 거절 — 명령줄 기록에 남지 않게).
+
+## 에이전트용 명령 — 사람 없이 끝까지 (biz-dev-09 1단계, AG-1~5)
+
+```bash
+export IMAGEMETA_API_KEY=<콘솔 연동 → API 키, 범위 assets:read+write>  IMAGEMETA_API_BASE=https://<B2B API>/t23/v1
+imagemeta upload public/images        # → imagemeta.json(경로 → id · sha256 · status · url · rev) 커밋
+imagemeta wait --timeout 600          # 모두 analyzed 일 때까지 (AI 분석이 꺼져 있으면 바로 실패)
+imagemeta rewrite src --dry-run       # 바뀔 곳 확인
+imagemeta rewrite src                 # /images/a.jpg · ./a.jpg · url(...) → 영구 주소
+npm run build && imagemeta inject dist
+```
+
+- 같은 내용(sha256)은 다시 올리지 않는다. 파일 내용이 바뀌면 새 이미지로 올라가고 매니페스트의 id 가 바뀐다.
+- `rewrite` 는 따옴표 · 템플릿 문자열 · `url()` 안의 정확한 경로만 바꾼다. `import`/`require` 줄은 그대로(경고), 비공개 이미지는 주소가 없어 그대로.
+- `visibility public|private` 는 `--yes` 가 있어야 한다(공개 · 영구 주소 멈춤은 되돌리기 어려움). 사이트 키 만들기는 콘솔에서만(`sites list` 는 읽기).
+- 모든 명령 `--json`(결과 stdout · 진행 stderr). 종료 코드 0 정상 · 1 실패(API 오류 · 분석 실패 · 시간 초과 · 한도) · 2 사용법 · 확인 필요.

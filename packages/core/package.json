@@ -1,7 +1,7 @@
 {
   "name": "@imagemeta/core",
   "version": "0.1.0",
-  "description": "메타 API 클라이언트 + 디스크 캐시 + 빌드 뒤 HTML 주입 CLI(imagemeta inject) — 빌드 연동·서버 렌더 공통 (biz-dev-05). 이름은 자리표시자",
+  "description": "메타 API 클라이언트 + CLI imagemeta(upload · wait · rewrite · list · describe · visibility · usage · sites list · inject) — 에이전트 · CI 가 사람 없이 (biz-dev-05 · 09). 이름은 자리표시자",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -13,6 +13,9 @@
     "./inject": {
       "types": "./src/inject.d.ts",
       "default": "./src/inject.js"
+    },
+    "./agent": {
+      "default": "./src/agent.js"
     }
   },
   "files": [
