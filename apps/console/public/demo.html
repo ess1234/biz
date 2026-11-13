@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>페이지 스크립트 데모</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- 고객 사이트에 붙이는 한 줄. alt 를 비워 둔 <img src=".../i/{id}"> 를 찾아 설명을 채운다 -->
+  <script src="https://biz-console-stage.vercel.app/js/imagemeta-0.1.0.min.js" data-key="pk_H16KUfN6Rdcft9Fsq6USWl7e" data-lang="ko" data-api="https://biz-console-stage.vercel.app/t23/v1" defer></script>
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --ink:#0f172a; --sub:#64748b; --line:#e2e8f0; --ok:#059669; --wait:#d97706; --accent:#0071e3; --code:#0f172a; --codeink:#e2e8f0; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0b1120; --card:#111827; --ink:#f1f5f9; --sub:#94a3b8; --line:#1f2937; --ok:#34d399; --wait:#fbbf24; --accent:#60a5fa; --code:#020617; --codeink:#cbd5e1; } }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans KR',system-ui,sans-serif; line-height:1.6; }
+    .wrap { max-width:1120px; margin:0 auto; padding:48px 16px 64px; }
+    .lbl { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; }
+    h1 { font-size:clamp(28px,5vw,44px); letter-spacing:-.02em; line-height:1.15; margin:0 0 12px; }
+    .lead { color:var(--sub); max-width:720px; margin:0 0 24px; }
+    pre { background:var(--code); color:var(--codeink); font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:16px; border-radius:12px; overflow-x:auto; margin:0 0 16px; white-space:pre-wrap; word-break:break-all; }
+    .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:0 0 32px; font-size:14px; color:var(--sub); }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-weight:500; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--wait); }
+    .done .dot { background:var(--ok); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+    .card img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; background:var(--line); }
+    .meta { padding:16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+    .name { font-weight:700; margin:0; }
+    .alt { font-size:14px; margin:0; min-height:2.8em; }
+    .alt.empty { color:var(--sub); font-style:italic; }
+    .attr { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sub); margin:0; word-break:break-all; }
+    .state { font-size:12px; font-weight:700; color:var(--wait); }
+    .card.filled .state { color:var(--ok); }
+    footer { margin-top:48px; font-size:12px; color:var(--sub); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="lbl">Page script demo</p>
+    <h1>alt 를 비워 둔 상품 사진에<br>설명이 저절로 채워집니다</h1>
+    <p class="lead">아래 이미지 6장은 HTML 에 <code>alt=""</code> 없이 영구 주소(<code>img.dossai.app/i/{id}</code>)만 적었습니다.
+      &lt;head&gt; 의 스크립트 한 줄이 페이지당 한 번 메타를 묶어 가져와 각 <code>&lt;img&gt;</code> 에 AI 설명(alt)과 <code>data-meta-rev</code> 를 넣습니다. 스크린리더 · 검색 엔진이 읽는 값입니다.</p>
+    <pre>&lt;script src="https://biz-console-stage.vercel.app/js/imagemeta-0.1.0.min.js"
+        data-key="pk_H16KUfN6Rdcft9Fsq6USWl7e" data-lang="ko"
+        data-api="https://biz-console-stage.vercel.app/t23/v1" defer&gt;&lt;/script&gt;</pre>
+    <div class="bar">
+      <span class="pill" id="status"><span class="dot"></span><span id="status-text">설명 기다리는 중 0 / 6</span></span>
+      <span>사이트 키는 허용한 출처에서만 동작합니다 — 이 페이지는 허용 출처에서 서빙됩니다.</span>
+    </div>
+
+    <div class="grid" id="grid">
+      <article class="card"><img src="https://img.dossai.app/i/a5495243-9f3b-4f02-8991-67c2a0e2b95f?w=800" width="1200" height="900">
+        <div class="meta"><p class="name">원형 접시</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+      <article class="card"><img src="https://img.dossai.app/i/72c2ac0f-b84b-4836-9471-c53770d612b1?w=800" width="1200" height="900">
+        <div class="meta"><p class="name">노트북</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+      <article class="card"><img src="https://img.dossai.app/i/dcbfe783-2ec5-4dfa-871c-a3bd0799d0a1?w=800" width="1200" height="900">
+        <div class="meta"><p class="name">수납 상자</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+      <article class="card"><img src="https://img.dossai.app/i/4e7e3427-674f-480d-b54b-cdbac5fdd12f?w=800" width="1448" height="1086">
+        <div class="meta"><p class="name">어린이 전동차</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+      <article class="card"><img src="https://img.dossai.app/i/cdb8fd07-4029-4ee2-b9c9-8c6d2fb109f7?w=800" width="1200" height="900">
+        <div class="meta"><p class="name">캠핑 텐트</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+      <article class="card"><img src="https://img.dossai.app/i/2251437c-8bd3-412e-b842-bef7acc6c67b?w=800" width="1200" height="900">
+        <div class="meta"><p class="name">원형 쿠션</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
+    </div>
+
+    <footer>데모 — 이미지는 B2B 데모 계정의 site 공개 이미지. 페이지 스크립트는 콘솔이 /js/ 에서 서빙.</footer>
+  </div>
+
+  <script>
+    // 데모 화면용: 페이지 스크립트가 넣은 alt 를 카드 아래에 보여 준다(고객 사이트에는 필요 없음)
+    (function () {
+      var cards = document.querySelectorAll('.card');
+      function show() {
+        var n = 0;
+        cards.forEach(function (c) {
+          var img = c.querySelector('img'), alt = img.getAttribute('alt');
+          if (!alt) return;
+          n++;
+          c.classList.add('filled');
+          var a = c.querySelector('.alt'); a.textContent = alt; a.classList.remove('empty');
+          c.querySelector('.attr').textContent = 'data-meta-rev="' + (img.getAttribute('data-meta-rev') || '') + '"';
+          c.querySelector('.state').textContent = 'alt 채워짐';
+        });
+        document.getElementById('status-text').textContent = (n === cards.length ? '설명 채움 ' : '설명 기다리는 중 ') + n + ' / ' + cards.length;
+        if (n === cards.length) document.getElementById('status').classList.add('done');
+      }
+      new MutationObserver(show).observe(document.getElementById('grid'), { subtree: true, attributes: true, attributeFilter: ['alt', 'data-meta-rev'] });
+      show();
+    })();
+  </script>
+</body>
+</html>
