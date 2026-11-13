@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <!-- 고객 사이트에 붙이는 한 줄. alt 를 비워 둔 <img src=".../i/{id}"> 를 찾아 설명을 채운다 -->
-  <script src="https://biz-console-stage.vercel.app/js/imagemeta-0.1.0.min.js" data-key="pk_H16KUfN6Rdcft9Fsq6USWl7e" data-lang="ko" data-api="https://biz-console-stage.vercel.app/t23/v1" defer></script>
+  <script src="https://biz-console-stage.vercel.app/js/imagemeta-0.1.0.min.js" data-key="pk_H16KUfN6Rdcft9Fsq6USWl7e" data-lang="ko" data-api="https://biz-console-stage.vercel.app/t23/v1" data-jsonld defer></script>
   <style>
     :root { --bg:#f8fafc; --card:#fff; --ink:#0f172a; --sub:#64748b; --line:#e2e8f0; --ok:#059669; --wait:#d97706; --accent:#0071e3; --code:#0f172a; --codeink:#e2e8f0; }
     @media (prefers-color-scheme: dark) { :root { --bg:#0b1120; --card:#111827; --ink:#f1f5f9; --sub:#94a3b8; --line:#1f2937; --ok:#34d399; --wait:#fbbf24; --accent:#60a5fa; --code:#020617; --codeink:#cbd5e1; } }
@@ -32,6 +32,8 @@
     .attr { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sub); margin:0; word-break:break-all; }
     .state { font-size:12px; font-weight:700; color:var(--wait); }
     .card.filled .state { color:var(--ok); }
+    h2 { font-size:clamp(20px,3vw,28px); letter-spacing:-.015em; margin:0 0 12px; }
+    #ld-out { max-height:520px; overflow:auto; white-space:pre; word-break:normal; }
     footer { margin-top:48px; font-size:12px; color:var(--sub); }
   </style>
 </head>
@@ -43,7 +45,7 @@
       &lt;head&gt; 의 스크립트 한 줄이 페이지당 한 번 메타를 묶어 가져와 각 <code>&lt;img&gt;</code> 에 AI 설명(alt)과 <code>data-meta-rev</code> 를 넣습니다. 스크린리더 · 검색 엔진이 읽는 값입니다.</p>
     <pre>&lt;script src="https://biz-console-stage.vercel.app/js/imagemeta-0.1.0.min.js"
         data-key="pk_H16KUfN6Rdcft9Fsq6USWl7e" data-lang="ko"
-        data-api="https://biz-console-stage.vercel.app/t23/v1" defer&gt;&lt;/script&gt;</pre>
+        data-api="https://biz-console-stage.vercel.app/t23/v1" data-jsonld defer&gt;&lt;/script&gt;</pre>
     <div class="bar">
       <span class="pill" id="status"><span class="dot"></span><span id="status-text">설명 기다리는 중 0 / 6</span></span>
       <span>사이트 키는 허용한 출처에서만 동작합니다 — 이 페이지는 허용 출처에서 서빙됩니다.</span>
@@ -63,6 +65,15 @@
       <article class="card"><img src="https://img.dossai.app/i/2251437c-8bd3-412e-b842-bef7acc6c67b?w=800" width="1200" height="900">
         <div class="meta"><p class="name">원형 쿠션</p><p class="alt empty">alt 없음</p><p class="attr"></p><span class="state">대기</span></div></article>
     </div>
+
+    <section class="ld">
+      <p class="lbl" style="margin-top:48px">JSON-LD · data-jsonld</p>
+      <h2>검색 엔진용 ImageObject 도 &lt;head&gt; 에 들어갑니다</h2>
+      <p class="lead"><code>data-jsonld</code> 를 붙이면 같은 요청 한 번으로 이미지마다 schema.org <code>ImageObject</code>(contentUrl · caption · keywords · 크기)를 받아
+        <code>&lt;script type="application/ld+json"&gt;</code> 하나로 &lt;head&gt; 끝에 넣습니다. 아래는 이 페이지 &lt;head&gt; 에 실제로 들어간 내용입니다.</p>
+      <p class="bar" style="margin:0 0 12px"><span class="pill" id="ld-status"><span class="dot"></span><span id="ld-status-text">JSON-LD 기다리는 중</span></span></p>
+      <pre id="ld-out">(아직 없음)</pre>
+    </section>
 
     <footer>데모 — 이미지는 B2B 데모 계정의 site 공개 이미지. 페이지 스크립트는 콘솔이 /js/ 에서 서빙.</footer>
   </div>
@@ -87,6 +98,21 @@
       }
       new MutationObserver(show).observe(document.getElementById('grid'), { subtree: true, attributes: true, attributeFilter: ['alt', 'data-meta-rev'] });
       show();
+
+      function showLd() {
+        var el = document.head.querySelector('script[type="application/ld+json"]');
+        if (!el) return false;
+        var data; try { data = JSON.parse(el.textContent); } catch (e) { return false; }
+        var n = Array.isArray(data) ? data.length : 1;
+        document.getElementById('ld-out').textContent = '<script type="application/ld+json">\n' + JSON.stringify(data, null, 2) + '\n<\/script>';
+        document.getElementById('ld-status-text').textContent = 'JSON-LD 들어감 — ImageObject ' + n + '개';
+        document.getElementById('ld-status').classList.add('done');
+        return true;
+      }
+      if (!showLd()) {
+        var mo = new MutationObserver(function () { if (showLd()) mo.disconnect(); });
+        mo.observe(document.head, { childList: true });
+      }
     })();
   </script>
 </body>
