@@ -99,6 +99,18 @@
       new MutationObserver(show).observe(document.getElementById('grid'), { subtree: true, attributes: true, attributeFilter: ['alt', 'data-meta-rev'] });
       show();
 
+      // 사이트 키는 허용 출처에서만 동작한다 — 로컬 파일(file://, 출처 null)이나 다른 도메인에서 열면 alt 가 비어 있는 게 정상
+      var ALLOWED = ['https://biz-console-stage.vercel.app', 'https://dos-biz-stage.vercel.app'];
+      if (ALLOWED.indexOf(location.origin) < 0) {
+        var where = location.protocol === 'file:' ? '로컬 파일' : location.origin;
+        var msg = '이 출처(' + where + ')는 사이트 키 허용 출처가 아니라 설명을 받지 않습니다 — ' + ALLOWED[0] + '/demo.html 에서 여세요';
+        document.getElementById('status-text').textContent = msg;
+        document.getElementById('ld-status-text').textContent = msg;
+        document.getElementById('ld-out').textContent = '(허용 출처에서 열면 여기에 <head> 의 JSON-LD 가 보입니다)';
+        document.querySelectorAll('.card .state').forEach(function (s) { s.textContent = '허용 출처 아님'; });
+        return;
+      }
+
       function showLd() {
         var el = document.head.querySelector('script[type="application/ld+json"]');
         if (!el) return false;
