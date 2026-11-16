@@ -10,6 +10,8 @@ import { useFileUrl } from '../lib/thumbs';
 import { toast } from '../lib/toast';
 
 const SNIPPET_KEY = (id: string) => `biz:snippet-done:${id}`;
+/** https://shop.example.com → shop.example.com (홈 카드에는 주소만 짧게) */
+const hostOf = (origin: string) => origin.replace(/^https?:\/\//, '').replace(/\/$/, '');
 const VIS_LABEL: Record<string, string> = { site: '사이트', public: '공개', private: '비공개' };
 
 function Thumb({ a }: { a: AssetSummary }) {
@@ -94,22 +96,34 @@ export function HomePage() {
           {usage.data && <p className="bc-muted" style={{ marginBottom: 0 }}>한도를 넘으면 {usage.data.overage_policy === 'block' ? '이번 달 남은 기간 동안 막혀요' : '초과분이 청구돼요'}. 전송 · 요청 수치는 전날까지 집계돼요.</p>}
         </div>
         <div className="bc-box">
-          <h3 style={{ fontSize: 15 }}>연동</h3>
+          <div className="bc-boxhead">
+            <h3 style={{ fontSize: 15, margin: 0 }}>사이트 연동</h3>
+            <Link className="bc-btn small" to="/integrations">관리</Link>
+          </div>
           {keys.isLoading && <p className="bc-muted">불러오는 중…</p>}
-          {keys.data && activeKeys.length === 0 && <p className="bc-muted">아직 사이트 키가 없어요.</p>}
-          {activeKeys.length > 0 && (
-            <table className="bc-table"><tbody>
-              {activeKeys.slice(0, 5).map((k) => (
-                <tr key={k.id}>
-                  <td><b>{k.label ?? '이름 없음'}</b></td>
-                  <td className="bc-muted">{k.allowed_origins.join(', ') || '허용 출처 없음'}</td>
-                  {/* 연동 화면과 같은 데모(콘솔 주소 /d/{키} → dos) */}
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}><a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a></td>
-                </tr>
-              ))}
-            </tbody></table>
+          {keys.data && activeKeys.length === 0 && (
+            <p className="bc-muted" style={{ marginBottom: 0 }}>아직 사이트 키가 없어요. <Link to="/integrations">사이트 키 만들기</Link></p>
           )}
-          <p className="bc-muted" style={{ marginBottom: 0 }}><Link to="/integrations">키 관리 · 끼워 넣기 코드</Link> · 키별 요청 수는 다음 단계에서 보여요.</p>
+          {activeKeys.length > 0 && (
+            <ul className="bc-keylist">
+              {activeKeys.slice(0, 5).map((k) => {
+                const hosts = k.allowed_origins.map(hostOf);
+                return (
+                  <li key={k.id}>
+                    <div className="info">
+                      <b>{k.label ?? '이름 없음'}</b>
+                      <span className="bc-muted" title={k.allowed_origins.join('\n')}>
+                        {hosts.length ? `설명을 받는 사이트 · ${hosts[0]}${hosts.length > 1 ? ` 외 ${hosts.length - 1}곳` : ''}` : '설명을 받을 사이트가 아직 없어요'}
+                      </span>
+                    </div>
+                    {/* 연동 화면과 같은 데모(콘솔 주소 /d/{키} → dos) */}
+                    <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {activeKeys.length > 5 && <p className="bc-muted" style={{ marginBottom: 0 }}>외 {activeKeys.length - 5}개 — 관리에서 모두 보기</p>}
         </div>
       </div>
 

@@ -173,3 +173,11 @@ h1, h2, h3 { margin: 0; }
   .bc-sheet { box-shadow: none; max-width: none; }
   .bc-noprint { display: none !important; }
 }
+/* 홈 카드 머리(제목 + 버튼) · 사이트 키 목록 (11-16) */
+.bc-boxhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.bc-keylist { list-style: none; margin: 0; padding: 0; }
+.bc-keylist li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--bc-line); }
+.bc-keylist li:first-child { border-top: 0; padding-top: 0; }
+.bc-keylist .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bc-keylist .info span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-keylist .bc-btn { flex-shrink: 0; white-space: nowrap; }
