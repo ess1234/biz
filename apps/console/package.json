@@ -8,7 +8,8 @@
     "dev": "node ../../packages/pagescript/build.mjs && vite",
     "prebuild": "node ../../packages/pagescript/build.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -19,7 +20,10 @@
     "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.6.3",
     "vite": "^5.4.8"
   }
 }

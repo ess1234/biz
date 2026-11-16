@@ -9,6 +9,7 @@
     "fixtures/*"
   ],
   "scripts": {
-    "test:vite": "npm --workspace fixtures/vite-static run build"
+    "test:vite": "npm --workspace fixtures/vite-static run build",
+    "typecheck": "npm --workspace apps/console run typecheck"
   }
 }

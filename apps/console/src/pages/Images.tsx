@@ -1,6 +1,6 @@
 /// 4-3 이미지 목록 (biz-dev-08, DC-2): 업로드(버튼 + 끌어다 놓기) · 검색 · 공개 범위 · 휴지통이 한 화면에. 기본 정렬은 올린 순(BD-06-2).
 /// 썸네일마다 공개 범위(파랑 사이트 · 초록 공개 · 회색 비공개)와 설명 상태. 여러 장을 고르면 작업 바.
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 

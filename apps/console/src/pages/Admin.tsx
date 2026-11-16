@@ -1,6 +1,6 @@
 /// 운영 (운영자만, 메뉴 맨 아래 — biz-dev-08 3절). sai 콘솔 Admin.tsx 의 B2B 부분을 옮김: 현황 · 사용량 상위 · 청구서 · 삭제 승인 · 백업 · 계정.
 /// 데이터만 — 이미지 · 주소는 보여 주지 않는다. 경로는 GET /me 의 admin.path 로만 안다(무작위 슬러그). 이 화면을 연 기록은 서버가 남긴다.
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 
