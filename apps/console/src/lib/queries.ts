@@ -4,11 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { api, type AssetSummary, type Page } from './api';
 
 export type Settings = {
-  ai_consent_at: string | null; plan: string; delete_requested_at: string | null; delete_approved_at: string | null;
+  ai_consent_at: string | null; plan: string; plan_label?: string | null; delete_requested_at: string | null; delete_approved_at: string | null;
   delete_grace_days: number; delete_approval_required: boolean; analysis_lang: string; updated_at?: string;
 };
 export type UsageSummary = {
-  from: string; to: string; totals: Record<string, number>; limits: Record<string, number | null>; plan: string;
+  from: string; to: string; totals: Record<string, number>; limits: Record<string, number | null>; plan: string; plan_label?: string | null;
   overage_policy: string; warnings?: string[]; edge_note?: string;
 };
 export type SiteKey = { id: string; key: string; label: string | null; allowed_origins: string[]; revoked_at: string | null; created_at: string };

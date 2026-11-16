@@ -2,6 +2,7 @@
 /// 삭제는 60일 유예 + 운영자 승인(BD-02-4). 멤버 초대는 서버에 없어서 2차(DC-5) — 1차는 소유자만 보여 준다.
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
 import { useSession } from '../lib/auth';
@@ -67,7 +68,7 @@ export function SettingsPage() {
               </form>
             ) : acc.name}
           </dd>
-          <dt>플랜</dt><dd>{s?.plan ?? acc.plan}</dd>
+          <dt>플랜</dt><dd>{s?.plan_label ?? s?.plan ?? acc.plan} <Link className="bc-link" to="/billing?tab=plan">요금제 보기</Link></dd>
           <dt>만든 날</dt><dd>{day(acc.created_at)}</dd>
         </dl>
       </section>

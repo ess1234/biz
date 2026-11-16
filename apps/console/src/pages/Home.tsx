@@ -58,7 +58,7 @@ export function HomePage() {
     <>
       <PageHead
         title={me!.account.name}
-        sub={<>플랜 {usage.data?.plan ?? settings.data?.plan ?? '—'}{recent.data ? ` · 최근 이미지 ${recent.data.items.length}장` : ''}</>}
+        sub={<>플랜 {usage.data?.plan_label ?? usage.data?.plan ?? settings.data?.plan_label ?? settings.data?.plan ?? '—'}{recent.data ? ` · 최근 이미지 ${recent.data.items.length}장` : ''}</>}
         /* 주 버튼은 화면에 하나 — AI 분석을 아직 안 켰으면 시작하기의 "켜기"가 주 버튼 */
         actions={<Link className={`bc-btn${settings.data?.ai_consent_at ? ' primary' : ''}`} to="/images"><Upload className="bc-ico" />이미지 올리기</Link>}
       />

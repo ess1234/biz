@@ -8,7 +8,7 @@ import { api } from '../lib/api';
 import { METRIC_LABEL, fmtMetric } from '../lib/queries';
 import { PageHead } from '../lib/ui';
 
-type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
+type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; plan_label?: string | null; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
 type Plan = { plan: string; label: string; overage_policy: string; limits: Record<string, number | null>; prices: { base_krw: number; storage_krw_per_gb: number; egress_krw_per_gb: number };
   month: { from: string; to: string; totals: Record<string, number>; warnings: string[] }; billing_note: string };
 type Line = { kind: string; label: string; qty: number; unit: string; unit_krw: number; amount_krw: number };
@@ -73,7 +73,7 @@ function UsageTab() {
         <button className="bc-btn small" onClick={() => setOffset((o) => o + 1)}>◀ 이전 달</button>
         <b>{range.label}</b>
         <button className="bc-btn small" disabled={offset === 0} onClick={() => setOffset((o) => Math.max(0, o - 1))}>다음 달 ▶</button>
-        {u && <span className="bc-badge gray">플랜 {u.plan} · 넘으면 {u.overage_policy === 'block' ? '막힘' : '초과분 청구'}</span>}
+        {u && <span className="bc-badge gray">플랜 {u.plan_label ?? u.plan} · 넘으면 {u.overage_policy === 'block' ? '막힘' : '초과분 청구'}</span>}
       </div>
       {q.isLoading && <p className="bc-muted">불러오는 중…</p>}
       {q.isError && <p className="bc-msg">사용량을 불러오지 못했어요.</p>}
