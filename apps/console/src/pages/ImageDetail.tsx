@@ -5,7 +5,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { ApiError, api, type Asset } from '../lib/api';
-import { VIS, VIS_ORDER, copyText, permanentUrl, useAsset } from '../lib/assets';
+import { VIS, VIS_ORDER, invalidateAsset, permanentUrl, useAsset } from '../lib/assets';
+import { copyText } from '../lib/clipboard';
+import { toastError } from '../lib/errors';
+import { fmtDateTime, fmtMB } from '../lib/format';
 import { fileUrl, useFileUrl } from '../lib/thumbs';
 import { toast } from '../lib/toast';
 
@@ -16,7 +19,7 @@ function Copy({ label, text }: { label: string; text: string }) {
   return (
     <div className="bc-copy">
       <div className="bc-muted">{label}</div>
-      <div className="line"><code>{text}</code><button className="bc-btn small" onClick={() => copyText(text, () => toast('복사했어요'), () => toast('복사하지 못했어요'))}>복사</button></div>
+      <div className="line"><code>{text}</code><button className="bc-btn small" onClick={() => copyText(text)}>복사</button></div>
     </div>
   );
 }
@@ -72,7 +75,7 @@ function usePatch(a: Asset) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.patch<Asset>(`/assets/${a.id}`, { base_version: a.manual_version ?? 0, ...body }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['asset', a.id] }); qc.invalidateQueries({ queryKey: ['assets'] }); },
+    onSuccess: () => { invalidateAsset(qc, a.id); },
     onError: (e: any) => {
       if (e instanceof ApiError && e.code === 'CONFLICT_STALE') { toast('다른 곳에서 먼저 바뀌었어요 — 최신 내용을 불러왔어요. 다시 고쳐 주세요'); qc.invalidateQueries({ queryKey: ['asset', a.id] }); }
       else toast(`저장하지 못했어요: ${e.message}`);
@@ -164,17 +167,17 @@ function Info({ a }: { a: Asset }) {
   const qc = useQueryClient();
   const trash = useMutation({
     mutationFn: () => api.delete(`/assets/${a.id}`),
-    onSuccess: () => { toast('휴지통으로 옮겼어요 — 영구 주소도 멈춰요'); qc.invalidateQueries({ queryKey: ['asset', a.id] }); qc.invalidateQueries({ queryKey: ['assets'] }); },
-    onError: (e: any) => toast(e.message),
+    onSuccess: () => { toast('휴지통으로 옮겼어요 — 영구 주소도 멈춰요'); invalidateAsset(qc, a.id); },
+    onError: toastError,
   });
   const category = a.chosen?.details?.category;
   return (
     <section className="bc-box">
       <h3 style={{ fontSize: 15 }}>정보</h3>
       <dl className="bc-kv" style={{ marginTop: 10, gridTemplateColumns: '96px 1fr' }}>
-        <dt>크기</dt><dd>{a.width && a.height ? `${a.width}×${a.height}` : '—'} · {a.bytes ? `${(a.bytes / 1048576).toFixed(1)}MB` : '—'}</dd>
+        <dt>크기</dt><dd>{a.width && a.height ? `${a.width}×${a.height}` : '—'} · {a.bytes ? fmtMB(a.bytes) : '—'}</dd>
         <dt>형식</dt><dd>{a.mime ?? '—'}</dd>
-        <dt>올린 날</dt><dd>{new Date(a.created_at).toLocaleString('ko-KR')}</dd>
+        <dt>올린 날</dt><dd>{fmtDateTime(a.created_at)}</dd>
         {category && <><dt>분류</dt><dd>{category}</dd></>}
         <dt>위치 정보</dt><dd>{a.lat != null ? '원본에 있음 · 공개 사본에서는 지워요' : '없음'}</dd>
         <dt>id</dt><dd><code style={{ fontSize: 12 }}>{a.id}</code></dd>
@@ -192,8 +195,8 @@ function Restore({ a }: { a: Asset }) {
   const qc = useQueryClient();
   const m = useMutation({
     mutationFn: () => api.post(`/assets/${a.id}:restore`),
-    onSuccess: () => { toast('되돌렸어요'); qc.invalidateQueries({ queryKey: ['asset', a.id] }); qc.invalidateQueries({ queryKey: ['assets'] }); },
-    onError: (e: any) => toast(e.message),
+    onSuccess: () => { toast('되돌렸어요'); invalidateAsset(qc, a.id); },
+    onError: toastError,
   });
   return <button className="bc-btn small" disabled={m.isPending} onClick={() => m.mutate()}>되돌리기</button>;
 }

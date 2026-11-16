@@ -26,3 +26,14 @@ export function Empty({ title, body, action }: { title: string; body?: ReactNode
     </div>
   );
 }
+
+/** 탭 바(.bc-tabs) — 고른 탭은 .on · aria-selected. 주소 반영 등은 onChange 쪽 몫. */
+export function Tabs<K extends string>({ items, value, onChange, disabled }: { items: readonly (readonly [K, string])[]; value: K; onChange: (k: K) => void; disabled?: (k: K) => boolean }) {
+  return (
+    <div className="bc-tabs" role="tablist">
+      {items.map(([k, label]) => (
+        <button key={k} role="tab" aria-selected={value === k} className={value === k ? 'on' : ''} disabled={disabled?.(k)} onClick={() => onChange(k)}>{label}</button>
+      ))}
+    </div>
+  );
+}

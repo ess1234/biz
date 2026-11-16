@@ -8,9 +8,11 @@ import { api, type AssetSummary, type Page } from '../lib/api';
 import { VIS, VIS_ORDER, descState } from '../lib/assets';
 import { useSettings } from '../lib/queries';
 import { useFileUrl } from '../lib/thumbs';
+import { toastError } from '../lib/errors';
+import { fmtMB } from '../lib/format';
 import { toast } from '../lib/toast';
 import { UPLOAD_LABEL, useUploader } from '../lib/upload';
-import { PageHead, Upload } from '../lib/ui';
+import { PageHead, Tabs, Upload } from '../lib/ui';
 
 const PAGE = 120;
 type Filter = 'all' | 'site' | 'public' | 'private' | 'trash';
@@ -90,17 +92,17 @@ export function ImagesPage() {
   const vis = useMutation({
     mutationFn: (v: string) => api.post<{ items: { id: string; ok: boolean; error?: { message: string } }[] }>('/assets:batch-visibility', { ids: [...selected], visibility: v }),
     onSuccess: (r, v) => { const bad = r.items.filter((x) => !x.ok).length; toast(bad ? `${r.items.length - bad}장 바꿈 · ${bad}장 실패` : `${r.items.length}장을 ${VIS[v]?.label} 로 바꿨어요`); refresh(); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
   const trash = useMutation({
     mutationFn: () => api.post<{ items: { ok: boolean }[] }>('/assets:batch-delete', { ids: [...selected] }),
     onSuccess: (r) => { toast(`${r.items.filter((x) => x.ok).length}장을 휴지통으로 옮겼어요 — 영구 주소도 멈춰요`); refresh(); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
   const restore = useMutation({
     mutationFn: async () => { for (const id of selected) await api.post(`/assets/${id}:restore`); },
     onSuccess: () => { toast('되돌렸어요'); refresh(); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
 
   const addFiles = (files: FileList | File[]) => {
@@ -140,7 +142,7 @@ export function ImagesPage() {
             {up.items.map((it) => (
               <li key={it.key}>
                 <span className="name">{it.file.name}</span>
-                <span className="bc-muted">{(it.file.size / 1048576).toFixed(1)}MB</span>
+                <span className="bc-muted">{fmtMB(it.file.size)}</span>
                 {it.status === 'upload' && <progress value={it.progress ?? 0} max={1} />}
                 {it.error && <span className="bc-msg" style={{ margin: 0 }}>{it.error}</span>}
                 <span className={`bc-badge${it.status === 'error' ? ' warn' : it.status === 'done' || it.status === 'dup' ? '' : ' gray'}`}>{UPLOAD_LABEL[it.status]}</span>
@@ -155,11 +157,7 @@ export function ImagesPage() {
           <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="설명 · 키워드 · 이미지 속 글자로 찾기" aria-label="검색" />
           {q && <button type="button" className="bc-btn small" onClick={() => set({ q: null })}>지우기</button>}
         </form>
-        <div className="bc-tabs" role="tablist">
-          {FILTERS.map(([k, label]) => (
-            <button key={k} role="tab" aria-selected={filter === k} className={filter === k ? 'on' : ''} disabled={Boolean(q) && k === 'trash'} onClick={() => set({ f: k === 'all' ? null : k })}>{label}</button>
-          ))}
-        </div>
+        <Tabs items={FILTERS} value={filter} disabled={(k) => Boolean(q) && k === 'trash'} onChange={(k) => set({ f: k === 'all' ? null : k })} />
       </div>
 
       {selected.size > 0 && (

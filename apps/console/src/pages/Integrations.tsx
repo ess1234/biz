@@ -5,22 +5,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { ApiError, api, type ApiKey } from '../lib/api';
-import { copyText, imageOrigin, permanentUrl } from '../lib/assets';
-import { useSession } from '../lib/auth';
-import { API_BASE } from '../lib/env';
+import { imageOrigin, permanentUrl } from '../lib/assets';
+import { canManage, useSession } from '../lib/auth';
+import { copyText } from '../lib/clipboard';
+import { apiOrigin } from '../lib/env';
+import { toastError } from '../lib/errors';
+import { fmtDate, fmtDateTime } from '../lib/format';
 import { type SiteKey, useSiteKeys } from '../lib/queries';
 import { toast } from '../lib/toast';
-import { PageHead } from '../lib/ui';
+import { PageHead, Tabs } from '../lib/ui';
 
 type FullSiteKey = SiteKey & { allowed_variants: string[] };
 const SCRIPT_FILE = String(import.meta.env.VITE_PAGE_SCRIPT || 'imagemeta-0.1.0.min.js');   // 제품명 미정 — 자리표시자 파일명
-const apiOrigin = () => (API_BASE.startsWith('http') ? API_BASE.replace(/\/t23\/v1$/, '') : location.origin);
-const TABS: [string, string][] = [['site', '사이트 키'], ['build', '빌드 연동'], ['api', 'API 키']];
+const TABS = [['site', '사이트 키'], ['build', '빌드 연동'], ['api', 'API 키']] as const;
 
 function CodeBox({ title, code, when }: { title: string; code: string; when?: string }) {
   return (
     <div className="bc-code">
-      <div className="head"><b>{title}</b><button className="bc-btn small" onClick={() => copyText(code, () => toast('복사했어요'), () => toast('복사하지 못했어요'))}>복사</button></div>
+      <div className="head"><b>{title}</b><button className="bc-btn small" onClick={() => copyText(code)}>복사</button></div>
       {when && <div className="bc-muted">{when}</div>}
       <pre>{code}</pre>
     </div>
@@ -29,13 +31,11 @@ function CodeBox({ title, code, when }: { title: string; code: string; when?: st
 
 export function IntegrationsPage() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') || 'site';
+  const tab = (params.get('tab') || 'site') as (typeof TABS)[number][0];
   return (
     <>
       <PageHead title="사이트 연동" sub="고객 사이트에서 이미지 설명을 받아 가는 방법이에요. 검색 엔진 노출이 중요하면 빌드 연동, 지금 있는 페이지에 바로 붙이려면 스크립트 한 줄을 써요." />
-      <div className="bc-tabs" role="tablist">
-        {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setParams(k === 'site' ? {} : { tab: k }, { replace: true })}>{label}</button>)}
-      </div>
+      <Tabs items={TABS} value={tab} onChange={(k) => setParams(k === 'site' ? {} : { tab: k }, { replace: true })} />
       <div className="bc-sec">{tab === 'build' ? <BuildTab /> : tab === 'api' ? <ApiKeysTab /> : <SiteKeysTab />}</div>
     </>
   );
@@ -91,12 +91,12 @@ function SiteKeysTab() {
   const revoke = useMutation({
     mutationFn: (id: string) => api.delete(`/site-keys/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['site-keys'] }); toast('폐기했어요 — 이미 받아 간 설명은 브라우저 캐시가 끝나는 10분 안에 사라져요'); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
   const items = (q.data?.items ?? []) as FullSiteKey[];
   const active = items.filter((k) => !k.revoked_at);
   const revoked = items.filter((k) => k.revoked_at);
-  const canEdit = me?.account.role === 'owner' || me?.account.role === 'admin';
+  const canEdit = canManage(me);
   return (
     <>
       <p className="bc-muted" style={{ marginTop: 0 }}>사이트 키는 비밀이 아니라 공개 값이에요. 허용 출처로만 묶여서, 등록한 사이트에서만 설명을 받아 가요.</p>
@@ -109,7 +109,7 @@ function SiteKeysTab() {
           <div className="bc-row" style={{ marginTop: 0 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <b>{k.label ?? '이름 없음'}</b> <code className="bc-keycode">{k.key}</code>
-              <div className="bc-muted">허용 출처 {k.allowed_origins.join(' · ') || '—'} · 변형 {k.allowed_variants.join(', ')} · {new Date(k.created_at).toLocaleDateString('ko-KR')}</div>
+              <div className="bc-muted">허용 출처 {k.allowed_origins.join(' · ') || '—'} · 변형 {k.allowed_variants.join(', ')} · {fmtDate(k.created_at)}</div>
             </div>
             {/* 데모는 콘솔 주소로 연다(vercel.json /d/:key → dos) — dos 가 이 출처의 /d/{키} 페이지 요청만 허용 출처 예외로 통과시킨다 */}
             <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
@@ -119,7 +119,7 @@ function SiteKeysTab() {
           {editing === k ? <KeyForm initial={k} onDone={() => setEditing(null)} /> : <Snippet k={k} />}
         </div>
       ))}
-      {revoked.length > 0 && <details className="bc-muted bc-sec"><summary>폐기한 키 {revoked.length}개</summary><ul>{revoked.map((k) => <li key={k.id}><code>{k.key.slice(0, 10)}…</code> {k.label ?? ''} · 폐기 {new Date(k.revoked_at!).toLocaleDateString('ko-KR')}</li>)}</ul></details>}
+      {revoked.length > 0 && <details className="bc-muted bc-sec"><summary>폐기한 키 {revoked.length}개</summary><ul>{revoked.map((k) => <li key={k.id}><code>{k.key.slice(0, 10)}…</code> {k.label ?? ''} · 폐기 {fmtDate(k.revoked_at)}</li>)}</ul></details>}
     </>
   );
 }
@@ -173,14 +173,14 @@ function ApiKeysTab() {
   const create = useMutation({
     mutationFn: () => api.post<ApiKey>(`/accounts/${accountId}/api-keys`, { label: label.trim() || null, scopes: [...scopes] }),
     onSuccess: (k) => { setIssued(k); setLabel(''); qc.invalidateQueries({ queryKey: ['api-keys', accountId] }); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
   const revoke = useMutation({
     mutationFn: (id: string) => api.delete(`/accounts/${accountId}/api-keys/${id}`),
     onSuccess: () => { toast('폐기했어요 — 그 키의 요청은 바로 거절돼요'); qc.invalidateQueries({ queryKey: ['api-keys', accountId] }); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
-  const canEdit = me?.account.role === 'owner' || me?.account.role === 'admin';
+  const canEdit = canManage(me);
   const items = q.data?.items ?? [];
   return (
     <>
@@ -188,7 +188,7 @@ function ApiKeysTab() {
       {issued?.key && (
         <div className="bc-box warn">
           <b>새 키 — 지금 복사해 두세요. 다시 볼 수 없어요.</b>
-          <div className="bc-copy"><div className="line"><code>{issued.key}</code><button className="bc-btn small" onClick={() => copyText(issued.key!, () => toast('복사했어요'), () => toast('복사하지 못했어요'))}>복사</button></div></div>
+          <div className="bc-copy"><div className="line"><code>{issued.key}</code><button className="bc-btn small" onClick={() => copyText(issued.key!)}>복사</button></div></div>
           <div className="bc-row"><button className="bc-btn small" onClick={() => setIssued(null)}>복사했어요</button></div>
         </div>
       )}
@@ -214,8 +214,8 @@ function ApiKeysTab() {
             <tr key={k.id} style={k.revoked_at ? { opacity: .5 } : undefined}>
               <td>{k.label || '이름 없음'}</td>
               <td>{k.scopes.map((s) => SCOPES.find((x) => x.id === s)?.label ?? s).join(', ')}</td>
-              <td>{k.last_used_at ? new Date(k.last_used_at).toLocaleString('ko-KR') : '—'}</td>
-              <td>{new Date(k.created_at).toLocaleDateString('ko-KR')}</td>
+              <td>{fmtDateTime(k.last_used_at)}</td>
+              <td>{fmtDate(k.created_at)}</td>
               <td>{k.revoked_at ? <span className="bc-muted">폐기됨</span> : canEdit && <button className="bc-btn small danger" onClick={() => confirm('이 키를 폐기할까요? 그 키를 쓰는 서버 · 빌드가 바로 실패해요.') && revoke.mutate(k.id)}>폐기</button>}</td>
             </tr>
           ))}</tbody>

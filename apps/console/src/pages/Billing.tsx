@@ -6,7 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 
 import { api } from '../lib/api';
 import { METRIC_LABEL, fmtMetric } from '../lib/queries';
-import { PageHead } from '../lib/ui';
+import { fmtDate, krw } from '../lib/format';
+import { PageHead, Tabs } from '../lib/ui';
 
 type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; plan_label?: string | null; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
 type Plan = { plan: string; label: string; overage_policy: string; limits: Record<string, number | null>; prices: { base_krw: number; storage_krw_per_gb: number; egress_krw_per_gb: number };
@@ -15,11 +16,9 @@ type Line = { kind: string; label: string; qty: number; unit: string; unit_krw: 
 export type Invoice = { id: string; period: string; plan: string; currency: string; lines: Line[]; usage: Record<string, number>; subtotal_krw: number; vat_krw: number; total_krw: number;
   status: 'draft' | 'issued' | 'paid' | 'void'; issued_at: string; due_at: string | null; paid_at: string | null; note: string | null };
 
-export const krw = (v: number) => `${Math.round(v).toLocaleString()}원`;
 export const INVOICE_STATUS: Record<Invoice['status'], string> = { draft: '초안', issued: '발행 — 입금 대기', paid: '결제 완료', void: '취소' };
 const METRICS = ['storage_bytes', 'egress_bytes', 'image_requests', 'meta_requests', 'transforms', 'uploads', 'analyses'];
-const TABS: [string, string][] = [['usage', '사용량'], ['invoices', '청구서'], ['plan', '플랜']];
-const day = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('ko-KR') : '—');
+const TABS = [['usage', '사용량'], ['invoices', '청구서'], ['plan', '플랜']] as const;
 
 function monthRange(offset: number) {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - offset);
@@ -31,13 +30,11 @@ function monthRange(offset: number) {
 
 export function BillingPage() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') || 'usage';
+  const tab = (params.get('tab') || 'usage') as (typeof TABS)[number][0];
   return (
     <>
       <PageHead title="사용량 · 청구" sub="이번 달 사용량과 한도, 청구서, 요금제예요. 전송 · 요청 수치는 전날까지 집계돼요." />
-      <div className="bc-tabs" role="tablist">
-        {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setParams(k === 'usage' ? {} : { tab: k }, { replace: true })}>{label}</button>)}
-      </div>
+      <Tabs items={TABS} value={tab} onChange={(k) => setParams(k === 'usage' ? {} : { tab: k }, { replace: true })} />
       <div className="bc-sec">{tab === 'invoices' ? <InvoicesTab /> : tab === 'plan' ? <PlanTab /> : <UsageTab />}</div>
     </>
   );
@@ -151,7 +148,7 @@ export function InvoiceSheet({ inv, onClose, account }: { inv: Invoice; onClose:
           <h3 style={{ margin: 0 }}>청구서 {inv.period}</h3>
           <div className="bc-row bc-noprint" style={{ marginTop: 0 }}><button className="bc-btn small" onClick={() => window.print()}>인쇄 / PDF</button><button className="bc-btn small" onClick={onClose}>닫기</button></div>
         </div>
-        <p className="bc-muted">{account ? `${account} · ` : ''}플랜 {inv.plan} · 발행 {day(inv.issued_at)}{inv.due_at ? ` · 입금 기한 ${day(inv.due_at)}` : ''} · {INVOICE_STATUS[inv.status]}{inv.paid_at ? ` (${day(inv.paid_at)})` : ''}</p>
+        <p className="bc-muted">{account ? `${account} · ` : ''}플랜 {inv.plan} · 발행 {fmtDate(inv.issued_at)}{inv.due_at ? ` · 입금 기한 ${fmtDate(inv.due_at)}` : ''} · {INVOICE_STATUS[inv.status]}{inv.paid_at ? ` (${fmtDate(inv.paid_at)})` : ''}</p>
         <table className="bc-table">
           <thead><tr><th>항목</th><th style={{ textAlign: 'right' }}>수량</th><th style={{ textAlign: 'right' }}>단가</th><th style={{ textAlign: 'right' }}>금액</th></tr></thead>
           <tbody>

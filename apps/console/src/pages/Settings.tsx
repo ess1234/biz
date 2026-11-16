@@ -5,14 +5,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
-import { useSession } from '../lib/auth';
+import { canManage, useSession } from '../lib/auth';
+import { toastError } from '../lib/errors';
+import { fmtDate, fmtMB } from '../lib/format';
 import { useSettings } from '../lib/queries';
 import { toast } from '../lib/toast';
 import { PageHead } from '../lib/ui';
 
 type ExportJob = { id: string; status: string; url: string | null; bytes: number | null; expires_at: string | null; created_at: string; finished_at: string | null; error?: string | null };
 
-const day = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString('ko-KR') : '—');
 const STATUS: Record<string, string> = { queued: '대기', running: '만드는 중', done: '완료', failed: '실패', expired: '만료' };
 
 export function SettingsPage() {
@@ -20,7 +21,7 @@ export function SettingsPage() {
   const settings = useSettings();
   const qc = useQueryClient();
   const acc = me!.account;
-  const owner = acc.role === 'owner' || acc.role === 'admin';
+  const owner = canManage(me);
 
   const [name, setName] = useState(acc.name);
   useEffect(() => setName(acc.name), [acc.name]);
@@ -33,7 +34,7 @@ export function SettingsPage() {
   const ai = useMutation({
     mutationFn: (on: boolean) => api.patch('/settings', { ai_consent: on }),
     onSuccess: (_d, on) => { qc.invalidateQueries({ queryKey: ['settings'] }); toast(on ? 'AI 분석을 켰어요' : 'AI 분석을 껐어요 — 대기 중인 분석도 취소했어요'); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
 
   const exports = useQuery({ queryKey: ['exports'], queryFn: () => api.get<{ items: ExportJob[] }>('/account/exports'), refetchInterval: (q) => (q.state.data?.items.some((x) => x.status === 'queued' || x.status === 'running') ? 5000 : false) });
@@ -47,7 +48,7 @@ export function SettingsPage() {
   const del = useMutation({
     mutationFn: () => api.delete('/account'),
     onSuccess: async () => { toast('삭제를 요청했어요'); await refresh(); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
 
   const s = settings.data;
@@ -69,14 +70,14 @@ export function SettingsPage() {
             ) : acc.name}
           </dd>
           <dt>플랜</dt><dd>{s?.plan_label ?? s?.plan ?? acc.plan} <Link className="bc-link" to="/billing?tab=plan">요금제 보기</Link></dd>
-          <dt>만든 날</dt><dd>{day(acc.created_at)}</dd>
+          <dt>만든 날</dt><dd>{fmtDate(acc.created_at)}</dd>
         </dl>
       </section>
 
       <section className="bc-sec bc-box">
         <h3 style={{ fontSize: 15 }}>AI 분석 {s?.ai_consent_at ? <span className="bc-badge">켜짐</span> : <span className="bc-badge gray">꺼짐</span>}</h3>
         <p className="bc-muted">켜면 올린 이미지를 외부 AI 로 보내 4개 언어 설명 · 키워드를 만들어요. 끄면 앞으로 올리는 이미지는 보내지 않고, 대기 중인 분석도 취소해요. 이미 만든 설명은 남아요.</p>
-        {s?.ai_consent_at && <p className="bc-muted">{day(s.ai_consent_at)} 에 켰어요.</p>}
+        {s?.ai_consent_at && <p className="bc-muted">{fmtDate(s.ai_consent_at)} 에 켰어요.</p>}
         {owner && s && (
           <div className="bc-row">
             {s.ai_consent_at
@@ -103,9 +104,9 @@ export function SettingsPage() {
             <thead><tr><th>요청</th><th>상태</th><th>크기</th><th /></tr></thead>
             <tbody>{exports.data.items.map((x) => (
               <tr key={x.id}>
-                <td>{day(x.created_at)}</td>
+                <td>{fmtDate(x.created_at)}</td>
                 <td>{STATUS[x.status] ?? x.status}{x.error ? ` — ${x.error}` : ''}</td>
-                <td>{x.bytes ? `${(x.bytes / 1024 ** 2).toFixed(1)} MB` : '—'}</td>
+                <td>{x.bytes ? fmtMB(x.bytes) : '—'}</td>
                 <td>{x.url ? <a className="bc-btn small" href={x.url}>받기</a> : x.status === 'done' ? <span className="bc-muted">만료</span> : null}</td>
               </tr>
             ))}</tbody>

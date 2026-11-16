@@ -90,6 +90,9 @@ export function useSession(): SessionState {
   return v;
 }
 
+/// 키 · 이름 · AI 분석 같은 워크스페이스 관리는 소유자 · 관리자만
+export const canManage = (me: Me | null | undefined) => me?.account.role === 'owner' || me?.account.role === 'admin';
+
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { loading, session, me, errorCode, error } = useSession();
   const loc = useLocation();

@@ -4,16 +4,17 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api, type AssetSummary } from '../lib/api';
+import { VIS } from '../lib/assets';
 import { useSession } from '../lib/auth';
 import { METRIC_LABEL, fmtMetric, useRecent, useSettings, useSiteKeys, useUsage, welcomed } from '../lib/queries';
 import { useFileUrl } from '../lib/thumbs';
+import { toastError } from '../lib/errors';
 import { toast } from '../lib/toast';
 import { ArrowRight, Check, Empty, ExternalLink, PageHead, Upload } from '../lib/ui';
 
 const SNIPPET_KEY = (id: string) => `biz:snippet-done:${id}`;
 /** https://shop.example.com → shop.example.com (홈 카드에는 주소만 짧게) */
 const hostOf = (origin: string) => origin.replace(/^https?:\/\//, '').replace(/\/$/, '');
-const VIS_LABEL: Record<string, string> = { site: '사이트', public: '공개', private: '비공개' };
 
 function Thumb({ a }: { a: AssetSummary }) {
   const url = useFileUrl('thumb256', a.has_thumb ? a.id : null);
@@ -22,7 +23,7 @@ function Thumb({ a }: { a: AssetSummary }) {
     <div className="cell" title={a.caption ?? a.file_name ?? ''} role="button" tabIndex={0} style={{ cursor: 'pointer' }}
       onClick={() => nav(`/images/${a.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') nav(`/images/${a.id}`); }}>
       {url && <img src={url} alt={a.caption ?? ''} loading="lazy" />}
-      <span className={`vis ${a.visibility}`}>{VIS_LABEL[a.visibility] ?? a.visibility}</span>
+      <span className={`vis ${a.visibility}`}>{VIS[a.visibility]?.label ?? a.visibility}</span>
     </div>
   );
 }
@@ -39,7 +40,7 @@ export function HomePage() {
   const consent = useMutation({
     mutationFn: () => api.patch('/settings', { ai_consent: true }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['settings'] }); toast('AI 분석을 켰어요'); },
-    onError: (e: any) => toast(e.message),
+    onError: toastError,
   });
 
   const activeKeys = (keys.data?.items ?? []).filter((k) => !k.revoked_at);
