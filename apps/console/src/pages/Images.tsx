@@ -2,7 +2,7 @@
 /// 썸네일마다 공개 범위(파랑 사이트 · 초록 공개 · 회색 비공개)와 설명 상태. 여러 장을 고르면 작업 바.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { api, type AssetSummary, type Page } from '../lib/api';
 import { VIS, VIS_ORDER, descState } from '../lib/assets';
@@ -10,6 +10,7 @@ import { useSettings } from '../lib/queries';
 import { useFileUrl } from '../lib/thumbs';
 import { toast } from '../lib/toast';
 import { UPLOAD_LABEL, useUploader } from '../lib/upload';
+import { PageHead, Upload } from '../lib/ui';
 
 const PAGE = 120;
 type Filter = 'all' | 'site' | 'public' | 'private' | 'trash';
@@ -119,12 +120,12 @@ export function ImagesPage() {
       onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
       className={dragging ? 'bc-dropping' : undefined}
     >
-      <div className="bc-row" style={{ marginTop: 0, justifyContent: 'space-between' }}>
-        <h2 className="bc-h" style={{ margin: 0 }}>이미지</h2>
-        <button className="bc-btn primary" onClick={() => fileRef.current?.click()}>이미지 올리기</button>
-        <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,.heic,.heif" style={{ display: 'none' }} onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
-      </div>
-      <p className="bc-muted">끌어다 놓아도 올라가요. 같은 파일은 다시 올리지 않아요. {aiOn ? '올린 뒤 몇십 초 안에 4개 언어 설명이 붙어요.' : 'AI 분석이 꺼져 있어서 설명이 생기지 않아요 — 설정에서 켜요.'}</p>
+      <PageHead
+        title="이미지"
+        sub={<>끌어다 놓아도 올라가요. 같은 파일은 다시 올리지 않아요. {aiOn ? '올린 뒤 몇십 초 안에 4개 언어 설명이 붙어요.' : <>AI 분석이 꺼져 있어서 설명이 생기지 않아요 — <Link to="/settings">설정에서 켜기</Link></>}</>}
+        actions={<button className="bc-btn primary" onClick={() => fileRef.current?.click()}><Upload className="bc-ico" />이미지 올리기</button>}
+      />
+      <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,.heic,.heif" style={{ display: 'none' }} onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
 
       {up.items.length > 0 && (
         <div className="bc-box bc-sec" style={{ marginTop: 12 }}>

@@ -7,6 +7,7 @@ import { ApiError, api } from '../lib/api';
 import { useSession } from '../lib/auth';
 import { useSettings } from '../lib/queries';
 import { toast } from '../lib/toast';
+import { PageHead } from '../lib/ui';
 
 type ExportJob = { id: string; status: string; url: string | null; bytes: number | null; expires_at: string | null; created_at: string; finished_at: string | null; error?: string | null };
 
@@ -52,9 +53,9 @@ export function SettingsPage() {
   const grace = s?.delete_grace_days ?? 60;
   return (
     <>
-      <h2 className="bc-h">설정</h2>
+      <PageHead title="설정" sub="워크스페이스 이름, AI 분석, 멤버, 내보내기와 삭제를 관리해요." />
 
-      <section className="bc-sec bc-box">
+      <section className="bc-box">
         <h3 style={{ fontSize: 15 }}>워크스페이스</h3>
         <dl className="bc-kv" style={{ marginTop: 12 }}>
           <dt>이름</dt>

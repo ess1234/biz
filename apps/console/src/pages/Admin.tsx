@@ -7,6 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useSession } from '../lib/auth';
 import { INVOICE_STATUS, InvoiceSheet, krw } from './Billing';
+import { PageHead } from '../lib/ui';
 
 const mb = (b: number) => `${((b ?? 0) / 1048576).toFixed(1)}MB`;
 const dt = (s: string | null | undefined) => (s ? new Date(s).toLocaleString('ko-KR') : '—');
@@ -34,8 +35,7 @@ export function AdminPage() {
   const u = usageTop.data;
   return (
     <>
-      <h2 className="bc-h">운영 <span className="bc-badge gray">데이터만</span></h2>
-      <p className="bc-muted">워크스페이스 · 이미지 · 분석 큐 · 청구의 현황이에요. 이미지와 주소는 보여 주지 않고, 이 화면을 연 기록이 남아요.</p>
+      <PageHead title="운영" badge={<span className="bc-badge gray">데이터만</span>} sub="워크스페이스 · 이미지 · 분석 큐 · 청구의 현황이에요. 이미지와 주소는 보여 주지 않고, 이 화면을 연 기록이 남아요." />
       {s && (
         <div className="bc-cards bc-sec">
           <Stat label="워크스페이스" v={`${s.accounts?.business ?? s.accounts?.total ?? 0} (오늘 +${s.accounts?.today ?? 0})`} />

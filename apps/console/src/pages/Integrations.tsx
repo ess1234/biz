@@ -10,6 +10,7 @@ import { useSession } from '../lib/auth';
 import { API_BASE } from '../lib/env';
 import { type SiteKey, useSiteKeys } from '../lib/queries';
 import { toast } from '../lib/toast';
+import { PageHead } from '../lib/ui';
 
 type FullSiteKey = SiteKey & { allowed_variants: string[] };
 const SCRIPT_FILE = String(import.meta.env.VITE_PAGE_SCRIPT || 'imagemeta-0.1.0.min.js');   // 제품명 미정 — 자리표시자 파일명
@@ -31,9 +32,8 @@ export function IntegrationsPage() {
   const tab = params.get('tab') || 'site';
   return (
     <>
-      <h2 className="bc-h">연동</h2>
-      <p className="bc-muted">고객 사이트에서 이미지 설명을 받아 가는 방법이에요. 검색 엔진 노출이 중요하면 빌드 연동, 지금 있는 페이지에 바로 붙이려면 스크립트 한 줄을 써요.</p>
-      <div className="bc-tabs bc-sec" role="tablist">
+      <PageHead title="사이트 연동" sub="고객 사이트에서 이미지 설명을 받아 가는 방법이에요. 검색 엔진 노출이 중요하면 빌드 연동, 지금 있는 페이지에 바로 붙이려면 스크립트 한 줄을 써요." />
+      <div className="bc-tabs" role="tablist">
         {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setParams(k === 'site' ? {} : { tab: k }, { replace: true })}>{label}</button>)}
       </div>
       <div className="bc-sec">{tab === 'build' ? <BuildTab /> : tab === 'api' ? <ApiKeysTab /> : <SiteKeysTab />}</div>

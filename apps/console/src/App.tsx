@@ -17,11 +17,12 @@ import { BillingPage } from './pages/Billing';
 import { IntegrationsPage } from './pages/Integrations';
 import { SettingsPage } from './pages/Settings';
 import { WelcomePage } from './pages/Welcome';
+import { BarChart3, ChevronDown, ImageIcon, KeyRound, LayoutGrid, LogOut, Plug, Settings, Shield } from './lib/ui';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
-const MENU: [string, string, boolean?][] = [
-  ['/', '홈', true], ['/images', '이미지'], ['/integrations', '연동'], ['/billing', '사용량 · 청구'], ['/settings', '설정'],
+const MENU: [string, string, React.ComponentType<{ className?: string }>, boolean?][] = [
+  ['/', '홈', LayoutGrid, true], ['/images', '이미지', ImageIcon], ['/integrations', '사이트 연동', Plug], ['/billing', '사용량 · 청구', BarChart3], ['/settings', '설정', Settings],
 ];
 
 function PersonMenu() {
@@ -43,12 +44,16 @@ function PersonMenu() {
   }
   return (
     <div className="bc-person" ref={ref}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>{session?.user.email?.split('@')[0] ?? '나'} ▾</button>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
+        <span className="bc-avatar" aria-hidden="true">{(session?.user.email ?? '나').slice(0, 1).toUpperCase()}</span>
+        <span className="name">{session?.user.email?.split('@')[0] ?? '나'}</span>
+        <ChevronDown className="bc-ico" />
+      </button>
       {open && (
         <div className="bc-menu" role="menu">
           <div className="who">{session?.user.email}</div>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); changePassword(); }}>비밀번호 바꾸기</button>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); signOut(); }}>로그아웃</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); changePassword(); }}><KeyRound className="bc-ico" />비밀번호 바꾸기</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); signOut(); }}><LogOut className="bc-ico" />로그아웃</button>
         </div>
       )}
     </div>
@@ -67,7 +72,7 @@ function Shell() {
   return (
     <div className="bc">
       <header className="bc-top">
-        <NavLink to="/" className="bc-logo">{BRAND}</NavLink>
+        <NavLink to="/" className="bc-logo"><span className="mark" aria-hidden="true"><ImageIcon className="bc-ico" /></span>{BRAND}</NavLink>
         <span className="bc-ws">{me?.account.name}</span>
         <span className="bc-spacer" />
         <UsageAlert />
@@ -75,8 +80,8 @@ function Shell() {
       </header>
       <div className="bc-body">
         <nav className="bc-nav" aria-label="메뉴">
-          {MENU.map(([to, label, end]) => <NavLink key={to} to={to} end={end}>{label}</NavLink>)}
-          {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin">운영</NavLink></>}
+          {MENU.map(([to, label, Icon, end]) => <NavLink key={to} to={to} end={end}><Icon className="bc-ico" />{label}</NavLink>)}
+          {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin"><Shield className="bc-ico" />운영</NavLink></>}
         </nav>
         <main className="bc-main"><Outlet /></main>
       </div>

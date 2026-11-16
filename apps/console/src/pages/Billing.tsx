@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { api } from '../lib/api';
 import { METRIC_LABEL, fmtMetric } from '../lib/queries';
+import { PageHead } from '../lib/ui';
 
 type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
 type Plan = { plan: string; label: string; overage_policy: string; limits: Record<string, number | null>; prices: { base_krw: number; storage_krw_per_gb: number; egress_krw_per_gb: number };
@@ -33,8 +34,8 @@ export function BillingPage() {
   const tab = params.get('tab') || 'usage';
   return (
     <>
-      <h2 className="bc-h">사용량 · 청구</h2>
-      <div className="bc-tabs bc-sec" role="tablist">
+      <PageHead title="사용량 · 청구" sub="이번 달 사용량과 한도, 청구서, 요금제예요. 전송 · 요청 수치는 전날까지 집계돼요." />
+      <div className="bc-tabs" role="tablist">
         {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setParams(k === 'usage' ? {} : { tab: k }, { replace: true })}>{label}</button>)}
       </div>
       <div className="bc-sec">{tab === 'invoices' ? <InvoicesTab /> : tab === 'plan' ? <PlanTab /> : <UsageTab />}</div>

@@ -8,6 +8,7 @@ import { useSession } from '../lib/auth';
 import { METRIC_LABEL, fmtMetric, useRecent, useSettings, useSiteKeys, useUsage, welcomed } from '../lib/queries';
 import { useFileUrl } from '../lib/thumbs';
 import { toast } from '../lib/toast';
+import { ArrowRight, Check, Empty, ExternalLink, PageHead, Upload } from '../lib/ui';
 
 const SNIPPET_KEY = (id: string) => `biz:snippet-done:${id}`;
 /** https://shop.example.com → shop.example.com (홈 카드에는 주소만 짧게) */
@@ -55,22 +56,26 @@ export function HomePage() {
   const limits = Object.entries(usage.data?.limits ?? {}).filter(([, v]) => v);
   return (
     <>
-      <h2 className="bc-h">{me!.account.name}</h2>
-      <p className="bc-muted">플랜 {usage.data?.plan ?? settings.data?.plan ?? '—'}</p>
+      <PageHead
+        title={me!.account.name}
+        sub={<>플랜 {usage.data?.plan ?? settings.data?.plan ?? '—'}{recent.data ? ` · 최근 이미지 ${recent.data.items.length}장` : ''}</>}
+        /* 주 버튼은 화면에 하나 — AI 분석을 아직 안 켰으면 시작하기의 "켜기"가 주 버튼 */
+        actions={<Link className={`bc-btn${settings.data?.ai_consent_at ? ' primary' : ''}`} to="/images"><Upload className="bc-ico" />이미지 올리기</Link>}
+      />
 
-      <section className="bc-sec">
-        <h3>시작하기 <span className={`bc-badge${doneCount < 4 ? ' gray' : ''}`}>{doneCount}/4</span></h3>
+      <section>
+        <h3 style={{ fontSize: 15, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>시작하기 <span className={`bc-badge${doneCount < 4 ? ' gray' : ''}`}>{doneCount}/4</span></h3>
         {doneCount === 4 ? (
-          <div className="bc-steps-folded">✓ 시작하기 4단계를 모두 끝냈어요</div>
+          <div className="bc-steps-folded"><Check className="bc-ico" />시작하기 4단계를 모두 끝냈어요</div>
         ) : (
           <ol className="bc-steps">
             {steps.map((s, i) => (
               <li key={s.title} className={s.done ? 'done' : ''}>
-                <span className="n">{s.done ? '✓' : i + 1}</span>
-                <div className="t"><b>{s.title}</b><div className="bc-muted">{s.body}</div></div>
+                <span className="n">{s.done ? <Check className="bc-ico" /> : i + 1}</span>
+                <div className="t"><b>{s.title}</b>{!s.done && <div className="bc-muted">{s.body}</div>}</div>
                 {!s.done && s.action === 'consent' && <button className="bc-btn small primary" disabled={consent.isPending || settings.isLoading} onClick={() => consent.mutate()}>켜기</button>}
                 {!s.done && s.action === 'snippet' && <button className="bc-btn small" onClick={() => { try { localStorage.setItem(SNIPPET_KEY(accId), '1'); } catch { /* 무시 */ } setSnippetDone(true); }}>붙였어요</button>}
-                {!s.done && 'to' in s && s.to && <Link className="bc-btn small" to={s.to}>열기</Link>}
+                {!s.done && 'to' in s && s.to && <Link className="bc-btn small" to={s.to}>열기<ArrowRight className="bc-ico" /></Link>}
               </li>
             ))}
           </ol>
@@ -79,7 +84,7 @@ export function HomePage() {
 
       <div className="bc-grid2 bc-sec">
         <div className={`bc-box${usage.data?.warnings?.length ? ' warn' : ''}`}>
-          <h3 style={{ fontSize: 15 }}>이번 달 한도</h3>
+          <div className="bc-boxhead"><h3>이번 달 한도</h3><Link className="bc-btn small ghost" to="/billing">자세히</Link></div>
           {usage.isLoading && <p className="bc-muted">불러오는 중…</p>}
           {usage.isError && <p className="bc-muted">사용량을 불러오지 못했어요.</p>}
           {usage.data && limits.length === 0 && <p className="bc-muted">이 플랜에는 한도가 없어요.</p>}
@@ -97,7 +102,7 @@ export function HomePage() {
         </div>
         <div className="bc-box">
           <div className="bc-boxhead">
-            <h3 style={{ fontSize: 15, margin: 0 }}>사이트 연동</h3>
+            <h3>사이트 연동</h3>
             <Link className="bc-btn small" to="/integrations">관리</Link>
           </div>
           {keys.isLoading && <p className="bc-muted">불러오는 중…</p>}
@@ -117,7 +122,7 @@ export function HomePage() {
                       </span>
                     </div>
                     {/* 연동 화면과 같은 데모(콘솔 주소 /d/{키} → dos) */}
-                    <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
+                    <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기<ExternalLink className="bc-ico" /></a>
                   </li>
                 );
               })}
@@ -127,10 +132,12 @@ export function HomePage() {
         </div>
       </div>
 
-      <section className="bc-sec">
-        <h3>최근 이미지 <Link className="bc-btn small" to="/images" style={{ marginLeft: 8 }}>모두 보기</Link></h3>
+      <section className="bc-box bc-sec">
+        <div className="bc-boxhead"><h3>최근 이미지</h3><Link className="bc-btn small ghost" to="/images">모두 보기<ArrowRight className="bc-ico" /></Link></div>
         {recent.isLoading && <p className="bc-muted">불러오는 중…</p>}
-        {recent.data && recent.data.items.length === 0 && <p className="bc-muted">아직 올린 이미지가 없어요.</p>}
+        {recent.data && recent.data.items.length === 0 && (
+          <Empty title="첫 이미지를 올려 보세요" body="분석이 끝나면 4개 언어 설명이 붙고 영구 주소가 생겨요." action={<Link className="bc-btn small" to="/images"><Upload className="bc-ico" />이미지 올리기</Link>} />
+        )}
         {recent.data && recent.data.items.length > 0 && <div className="bc-thumbs">{recent.data.items.map((a) => <Thumb key={a.id} a={a} />)}</div>}
       </section>
     </>
