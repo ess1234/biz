@@ -111,7 +111,8 @@ function SiteKeysTab() {
               <b>{k.label ?? '이름 없음'}</b> <code className="bc-keycode">{k.key}</code>
               <div className="bc-muted">허용 출처 {k.allowed_origins.join(' · ') || '—'} · 변형 {k.allowed_variants.join(', ')} · {new Date(k.created_at).toLocaleDateString('ko-KR')}</div>
             </div>
-            <a className="bc-btn small" href={`${apiOrigin()}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
+            {/* 데모는 콘솔 주소로 연다(vercel.json /d/:key → dos) — dos 가 이 출처의 /d/{키} 페이지 요청만 허용 출처 예외로 통과시킨다 */}
+            <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
             {canEdit && <button className="bc-btn small" onClick={() => setEditing(editing === k ? null : k)}>수정</button>}
             {canEdit && <button className="bc-btn small danger" onClick={() => confirm('이 키를 폐기할까요? 이 키로 설명을 받던 페이지는 alt 가 비게 돼요.') && revoke.mutate(k.id)}>폐기</button>}
           </div>
