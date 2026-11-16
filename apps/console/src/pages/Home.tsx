@@ -99,10 +99,17 @@ export function HomePage() {
           {keys.data && activeKeys.length === 0 && <p className="bc-muted">아직 사이트 키가 없어요.</p>}
           {activeKeys.length > 0 && (
             <table className="bc-table"><tbody>
-              {activeKeys.slice(0, 5).map((k) => <tr key={k.id}><td><b>{k.label ?? '이름 없음'}</b></td><td className="bc-muted">{k.allowed_origins.join(', ') || '허용 출처 없음'}</td></tr>)}
+              {activeKeys.slice(0, 5).map((k) => (
+                <tr key={k.id}>
+                  <td><b>{k.label ?? '이름 없음'}</b></td>
+                  <td className="bc-muted">{k.allowed_origins.join(', ') || '허용 출처 없음'}</td>
+                  {/* 연동 화면과 같은 데모(콘솔 주소 /d/{키} → dos) */}
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}><a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a></td>
+                </tr>
+              ))}
             </tbody></table>
           )}
-          <p className="bc-muted" style={{ marginBottom: 0 }}>키별 요청 수는 다음 단계에서 보여요.</p>
+          <p className="bc-muted" style={{ marginBottom: 0 }}><Link to="/integrations">키 관리 · 끼워 넣기 코드</Link> · 키별 요청 수는 다음 단계에서 보여요.</p>
         </div>
       </div>
 
