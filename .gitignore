@@ -8,3 +8,6 @@ fixtures/*/src/main.jsx
 apps/console/public/js/
 .vercel/
 !fixtures/vite-vue/index.html
+
+# 픽스처에 복사된 빌드 산출물 (dos/scripts/biz_pagescript_xmp_fixture.py 가 다시 만듦)
+fixtures/pagescript-xmp/imagemeta.min.js
