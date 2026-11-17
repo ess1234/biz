@@ -19,6 +19,20 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 - 로컬: `cd apps/console` → `.env.local`(git 무시, `.env.example` 참고) → `npm run dev` (http://localhost:5174, `BIZ_API_BASE` 로 dos 지정 — 기본 127.0.0.1:8000).
 - 빌드 변수: `VITE_BRAND`(제품명 자리표시자) · `VITE_SUPABASE_URL` · `VITE_SUPABASE_ANON_KEY` · `VITE_IMAGE_BASE`(이미지 호스트) · `VITE_API_BASE`(비우면 같은 오리진 `/t23/v1`) · `VITE_PAGE_SCRIPT`(기본 `imagemeta-0.1.0.min.js`). sai 의 `VITE_T23_*` 와 이름이 다르다.
 - 라우트: `/` 홈 · `/welcome` 첫 로그인 · `/images` · `/images/:id` · `/integrations?tab=site|build|api` · `/billing?tab=usage|invoices|plan` · `/settings` · `/admin`(운영자만). 옛 `/me*` 는 새 주소로 리다이렉트.
+- 검사: `npm run typecheck` (strict · 안 쓰는 이름 금지).
+
+### 콘솔 폴더 (`apps/console/src`, 리팩토링 2단계 11-17)
+
+```
+app/        App(라우트 · 옛 주소 넘기기) · Shell(상단 바 · 메뉴 · 한도 알림 · 사람 메뉴)
+features/   auth(Login · RequireAuth) · home(Home · Welcome) · images(Images · ImageDetail) · integrations · billing · settings · admin
+ui/         여러 화면이 같이 쓰는 조각 — common(PageHead · Empty · Tabs · 아이콘) · InvoiceSheet
+data/       types(응답 타입) · hooks(useSettings · useUsage · useSiteKeys · useRecent · useAsset) · assets(공개 범위 · 설명 상태 문구) · usage(지표 문구) · invoices(청구서 상태)
+lib/        api · session · supabase · env · urls(영구 주소) · thumbs · upload · toast · format · clipboard · errors
+```
+
+규칙: 아래 층은 위 층을 import 하지 않는다(lib → data → ui → features → app). `data/types` 는 의존이 없는 잎이라 lib 도 쓴다.
+화면끼리(features 사이) import 는 같은 폴더 안에서만 — 둘 이상이 쓰면 `ui/` 나 `data/` 로 올린다. 응답 타입은 `data/types` 에만 둔다.
 - 배포(Vercel, 모노레포): 프로젝트 Root Directory = `apps/console`, 저장소 루트(`biz/`)에서 `npx vercel deploy`. `npm run build` 의 prebuild 가 `../../packages/pagescript` 를 빌드한다.
 
 - 패키지 이름 `imagemeta` 는 자리표시자 — 제품명이 정해지면 한 곳에서 바꾼다. 코드에 호스트를 박지 않는다(`apiBase` 는 필수 인자).

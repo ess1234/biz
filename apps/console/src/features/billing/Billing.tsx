@@ -1,22 +1,21 @@
-/// 4-6 사용량 · 청구 (biz-dev-08): 사용량 · 청구서 · 플랜을 탭으로. sai 콘솔 Usage.tsx · Billing.tsx 에서 옮김.
+/// 4-6 사용량 · 청구 (biz-dev-08): 사용량 · 청구서 · 플랜을 탭으로.
 /// 보이는 숫자 = 청구 기준(usage_daily). 결제는 수동(계좌이체 · 세금계산서) — 운영자가 입금을 확인하면 '결제 완료'.
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 
-import { api } from '../lib/api';
-import { METRIC_LABEL, fmtMetric } from '../lib/queries';
-import { fmtDate, krw } from '../lib/format';
-import { PageHead, Tabs } from '../lib/ui';
+import { type Invoice } from '../../data/types';
+import { METRIC_LABEL, fmtMetric } from '../../data/usage';
+import { api } from '../../lib/api';
+import { INVOICE_STATUS } from '../../data/invoices';
+import { krw } from '../../lib/format';
+import { InvoiceSheet } from '../../ui/InvoiceSheet';
+import { PageHead, Tabs } from '../../ui/common';
 
 type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; plan_label?: string | null; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
 type Plan = { plan: string; label: string; overage_policy: string; limits: Record<string, number | null>; prices: { base_krw: number; storage_krw_per_gb: number; egress_krw_per_gb: number };
   month: { from: string; to: string; totals: Record<string, number>; warnings: string[] }; billing_note: string };
-type Line = { kind: string; label: string; qty: number; unit: string; unit_krw: number; amount_krw: number };
-export type Invoice = { id: string; period: string; plan: string; currency: string; lines: Line[]; usage: Record<string, number>; subtotal_krw: number; vat_krw: number; total_krw: number;
-  status: 'draft' | 'issued' | 'paid' | 'void'; issued_at: string; due_at: string | null; paid_at: string | null; note: string | null };
 
-export const INVOICE_STATUS: Record<Invoice['status'], string> = { draft: '초안', issued: '발행 — 입금 대기', paid: '결제 완료', void: '취소' };
 const METRICS = ['storage_bytes', 'egress_bytes', 'image_requests', 'meta_requests', 'transforms', 'uploads', 'analyses'];
 const TABS = [['usage', '사용량'], ['invoices', '청구서'], ['plan', '플랜']] as const;
 
@@ -136,30 +135,5 @@ function InvoicesTab() {
       )}
       {open && <InvoiceSheet inv={open} onClose={() => setOpen(null)} />}
     </>
-  );
-}
-
-/// 인쇄용 청구서 — 숫자 · 항목만. 창 인쇄로 PDF 저장 (운영 탭도 같이 씀)
-export function InvoiceSheet({ inv, onClose, account }: { inv: Invoice; onClose: () => void; account?: string }) {
-  return (
-    <div className="bc-sheet-backdrop" onClick={onClose}>
-      <div className="bc-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="bc-row" style={{ marginTop: 0, justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0 }}>청구서 {inv.period}</h3>
-          <div className="bc-row bc-noprint" style={{ marginTop: 0 }}><button className="bc-btn small" onClick={() => window.print()}>인쇄 / PDF</button><button className="bc-btn small" onClick={onClose}>닫기</button></div>
-        </div>
-        <p className="bc-muted">{account ? `${account} · ` : ''}플랜 {inv.plan} · 발행 {fmtDate(inv.issued_at)}{inv.due_at ? ` · 입금 기한 ${fmtDate(inv.due_at)}` : ''} · {INVOICE_STATUS[inv.status]}{inv.paid_at ? ` (${fmtDate(inv.paid_at)})` : ''}</p>
-        <table className="bc-table">
-          <thead><tr><th>항목</th><th style={{ textAlign: 'right' }}>수량</th><th style={{ textAlign: 'right' }}>단가</th><th style={{ textAlign: 'right' }}>금액</th></tr></thead>
-          <tbody>
-            {inv.lines.map((l, i) => <tr key={i}><td>{l.label}</td><td style={{ textAlign: 'right' }}>{l.qty} {l.unit}</td><td style={{ textAlign: 'right' }}>{krw(l.unit_krw)}</td><td style={{ textAlign: 'right' }}>{krw(l.amount_krw)}</td></tr>)}
-            <tr><td colSpan={3} style={{ textAlign: 'right' }}>공급가액</td><td style={{ textAlign: 'right' }}>{krw(inv.subtotal_krw)}</td></tr>
-            <tr><td colSpan={3} style={{ textAlign: 'right' }}>부가세 10%</td><td style={{ textAlign: 'right' }}>{krw(inv.vat_krw)}</td></tr>
-            <tr style={{ fontWeight: 700 }}><td colSpan={3} style={{ textAlign: 'right' }}>합계</td><td style={{ textAlign: 'right' }}>{krw(inv.total_krw)}</td></tr>
-          </tbody>
-        </table>
-        <p className="bc-muted" style={{ fontSize: 12 }}>그 달 사용량: 저장 {inv.usage?.storage_gb} GB(월말) · 전송 {inv.usage?.egress_gb} GB · 변환 {inv.usage?.transforms?.toLocaleString?.()} · 분석 {inv.usage?.analyses?.toLocaleString?.()} · 업로드 {inv.usage?.uploads}{inv.note ? ` · 메모: ${inv.note}` : ''}</p>
-      </div>
-    </div>
   );
 }

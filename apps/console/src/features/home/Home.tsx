@@ -3,14 +3,17 @@ import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { api, type AssetSummary } from '../lib/api';
-import { VIS } from '../lib/assets';
-import { useSession } from '../lib/auth';
-import { METRIC_LABEL, fmtMetric, useRecent, useSettings, useSiteKeys, useUsage, welcomed } from '../lib/queries';
-import { useFileUrl } from '../lib/thumbs';
-import { toastError } from '../lib/errors';
-import { toast } from '../lib/toast';
-import { ArrowRight, Check, Empty, ExternalLink, PageHead, Upload } from '../lib/ui';
+import { VIS } from '../../data/assets';
+import { useRecent, useSettings, useSiteKeys, useUsage } from '../../data/hooks';
+import { type AssetSummary } from '../../data/types';
+import { METRIC_LABEL, fmtMetric } from '../../data/usage';
+import { api } from '../../lib/api';
+import { toastError } from '../../lib/errors';
+import { useSession } from '../../lib/session';
+import { useFileUrl } from '../../lib/thumbs';
+import { toast } from '../../lib/toast';
+import { ArrowRight, Check, Empty, ExternalLink, PageHead, Upload } from '../../ui/common';
+import { welcomed } from './welcomed';
 
 const SNIPPET_KEY = (id: string) => `biz:snippet-done:${id}`;
 /** https://shop.example.com → shop.example.com (홈 카드에는 주소만 짧게) */

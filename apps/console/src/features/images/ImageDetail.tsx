@@ -4,13 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { ApiError, api, type Asset } from '../lib/api';
-import { VIS, VIS_ORDER, invalidateAsset, permanentUrl, useAsset } from '../lib/assets';
-import { copyText } from '../lib/clipboard';
-import { toastError } from '../lib/errors';
-import { fmtDateTime, fmtMB } from '../lib/format';
-import { fileUrl, useFileUrl } from '../lib/thumbs';
-import { toast } from '../lib/toast';
+import { VIS, VIS_ORDER } from '../../data/assets';
+import { invalidateAsset, useAsset } from '../../data/hooks';
+import { type Asset } from '../../data/types';
+import { ApiError, api } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
+import { toastError } from '../../lib/errors';
+import { fmtDateTime, fmtMB } from '../../lib/format';
+import { fileUrl, useFileUrl } from '../../lib/thumbs';
+import { toast } from '../../lib/toast';
+import { permanentUrl } from '../../lib/urls';
 
 const LANGS: [string, string][] = [['ko', '한국어'], ['en', 'English'], ['ja', '日本語'], ['zh', '中文']];
 const WIDTHS = [400, 800, 1200];

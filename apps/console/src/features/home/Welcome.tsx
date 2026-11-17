@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { ApiError, api } from '../lib/api';
-import { useSession } from '../lib/auth';
-import { BRAND } from '../lib/env';
-import { markWelcomed, useSettings } from '../lib/queries';
-import { toast } from '../lib/toast';
+import { useSettings } from '../../data/hooks';
+import { ApiError, api } from '../../lib/api';
+import { BRAND } from '../../lib/env';
+import { useSession } from '../../lib/session';
+import { toast } from '../../lib/toast';
+import { markWelcomed } from './welcomed';
 
 export function WelcomePage() {
   const { me, refresh } = useSession();

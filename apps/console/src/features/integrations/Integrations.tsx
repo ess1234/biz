@@ -4,16 +4,17 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { ApiError, api, type ApiKey } from '../lib/api';
-import { imageOrigin, permanentUrl } from '../lib/assets';
-import { canManage, useSession } from '../lib/auth';
-import { copyText } from '../lib/clipboard';
-import { apiOrigin } from '../lib/env';
-import { toastError } from '../lib/errors';
-import { fmtDate, fmtDateTime } from '../lib/format';
-import { type SiteKey, useSiteKeys } from '../lib/queries';
-import { toast } from '../lib/toast';
-import { PageHead, Tabs } from '../lib/ui';
+import { useSiteKeys } from '../../data/hooks';
+import { type ApiKey, type SiteKey } from '../../data/types';
+import { ApiError, api } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
+import { apiOrigin } from '../../lib/env';
+import { toastError } from '../../lib/errors';
+import { fmtDate, fmtDateTime } from '../../lib/format';
+import { canManage, useSession } from '../../lib/session';
+import { toast } from '../../lib/toast';
+import { imageOrigin, permanentUrl } from '../../lib/urls';
+import { PageHead, Tabs } from '../../ui/common';
 
 type FullSiteKey = SiteKey & { allowed_variants: string[] };
 const SCRIPT_FILE = String(import.meta.env.VITE_PAGE_SCRIPT || 'imagemeta-0.1.0.min.js');   // 제품명 미정 — 자리표시자 파일명

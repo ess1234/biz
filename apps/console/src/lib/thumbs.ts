@@ -1,7 +1,8 @@
 /// 썸네일 서명 URL (sai 콘솔에서 복사): 보이는 셀의 id 를 모아 200ms 디바운스 → POST /files:batch, 메모리 캐시 50분, 만료·실패는 그 id 만 재발급.
 import { useEffect, useState } from 'react';
 
-import { api, type FileUrl } from './api';
+import { type FileUrl } from '../data/types';
+import { api } from './api';
 
 type Variant = 'thumb256' | 'thumb1024' | 'original' | 'tagged';
 const TTL_MS = 50 * 60 * 1000;

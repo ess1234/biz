@@ -4,15 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { api, type AssetSummary, type Page } from '../lib/api';
-import { VIS, VIS_ORDER, descState } from '../lib/assets';
-import { useSettings } from '../lib/queries';
-import { useFileUrl } from '../lib/thumbs';
-import { toastError } from '../lib/errors';
-import { fmtMB } from '../lib/format';
-import { toast } from '../lib/toast';
-import { UPLOAD_LABEL, useUploader } from '../lib/upload';
-import { PageHead, Tabs, Upload } from '../lib/ui';
+import { VIS, VIS_ORDER, descState } from '../../data/assets';
+import { useSettings } from '../../data/hooks';
+import { type AssetSummary, type Page } from '../../data/types';
+import { api } from '../../lib/api';
+import { toastError } from '../../lib/errors';
+import { fmtMB } from '../../lib/format';
+import { useFileUrl } from '../../lib/thumbs';
+import { toast } from '../../lib/toast';
+import { UPLOAD_LABEL, useUploader } from '../../lib/upload';
+import { PageHead, Tabs, Upload } from '../../ui/common';
 
 const PAGE = 120;
 type Filter = 'all' | 'site' | 'public' | 'private' | 'trash';
