@@ -1,5 +1,5 @@
 /// 콘솔 셸 (biz-dev-08 3절·4절): 상단 바(로고 자리표시자 · 워크스페이스 · 한도 알림 · 사람 메뉴) + 메뉴 다섯 개, 운영자면 맨 아래 운영.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { useUsage } from '../data/hooks';
@@ -8,7 +8,7 @@ import { BRAND } from '../lib/env';
 import { useSession } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
-import { BarChart3, ChevronDown, ImageIcon, KeyRound, LayoutGrid, LogOut, Plug, Settings, Shield } from '../ui/common';
+import { BarChart3, ChevronDown, ImageIcon, KeyRound, LayoutGrid, Loading, LogOut, Plug, Settings, Shield } from '../ui/common';
 
 const MENU: [string, string, React.ComponentType<{ className?: string }>, boolean?][] = [
   ['/', '홈', LayoutGrid, true], ['/images', '이미지', ImageIcon], ['/integrations', '사이트 연동', Plug], ['/billing', '사용량 · 청구', BarChart3], ['/settings', '설정', Settings],
@@ -72,7 +72,7 @@ export function Shell() {
           {MENU.map(([to, label, Icon, end]) => <NavLink key={to} to={to} end={end}><Icon className="bc-ico" />{label}</NavLink>)}
           {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin"><Shield className="bc-ico" />운영</NavLink></>}
         </nav>
-        <main className="bc-main"><Outlet /></main>
+        <main className="bc-main"><Suspense fallback={<Loading />}><Outlet /></Suspense></main>
       </div>
     </div>
   );

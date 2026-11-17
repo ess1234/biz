@@ -16,6 +16,11 @@ export function PageHead({ title, sub, badge, actions }: { title: ReactNode; sub
   );
 }
 
+/** 불러오는 동안 — 경로별로 나눈 화면을 받을 때(Suspense fallback) */
+export function Loading() {
+  return <div className="bc-center"><div className="bc-spinner" /></div>;
+}
+
 /** 비어 있을 때: 무엇을 하면 되는지 한 줄 + 행동 버튼. */
 export function Empty({ title, body, action }: { title: string; body?: ReactNode; action?: ReactNode }) {
   return (
