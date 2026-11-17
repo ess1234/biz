@@ -1,5 +1,5 @@
 /// 4-5 연동 (biz-dev-08): 사이트 키 · 빌드 연동 · API 키를 탭으로. 코드 옆에 "언제 이 방법을 쓰나" 한 줄.
-/// 사이트 키 · 끼워 넣기 코드는 sai 콘솔 Biz.tsx, API 키는 Workspace.tsx 에서 옮겨 B2B 문구로. 연동 확인(키별 요청 수 · 거절된 출처)은 다음 단계(DC-6).
+/// 연동 확인(키별 요청 수 · 거절된 출처)은 아직 없다 — 서버 집계가 생기면(DC-6).
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';

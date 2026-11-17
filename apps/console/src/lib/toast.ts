@@ -1,4 +1,4 @@
-/// 아주 작은 토스트 — 라이브러리 없이 (sai 콘솔에서 복사).
+/// 아주 작은 토스트 — 라이브러리 없이, 화면에 하나(.bc-toast).
 let el: HTMLDivElement | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 

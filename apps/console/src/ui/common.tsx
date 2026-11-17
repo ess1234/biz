@@ -1,4 +1,4 @@
-/// 공통 화면 조각 (11-16 디자인 A): 페이지 머리 · 빈 화면. 아이콘은 lucide-react 를 .bc-ico 크기로.
+/// 공통 화면 조각 (11-16 디자인 A): 페이지 머리 · 빈 화면 · 탭 바. 아이콘은 lucide-react 를 .bc-ico 크기로.
 import type { ReactNode } from 'react';
 
 export { ArrowRight, BarChart3, Check, ChevronDown, Copy, ExternalLink, Image as ImageIcon, KeyRound, LayoutGrid, LogOut, Plug, Settings, Shield, Upload } from 'lucide-react';

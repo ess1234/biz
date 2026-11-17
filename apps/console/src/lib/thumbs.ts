@@ -1,4 +1,4 @@
-/// 썸네일 서명 URL (sai 콘솔에서 복사): 보이는 셀의 id 를 모아 200ms 디바운스 → POST /files:batch, 메모리 캐시 50분, 만료·실패는 그 id 만 재발급.
+/// 썸네일 서명 URL: 보이는 셀의 id 를 모아 200ms 디바운스 → POST /files:batch, 메모리 캐시 50분, 만료·실패는 그 id 만 재발급.
 import { useEffect, useState } from 'react';
 
 import { type FileUrl } from '../data/types';

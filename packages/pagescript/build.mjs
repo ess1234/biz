@@ -1,4 +1,4 @@
-// 페이지 스크립트 번들 (sai/scripts/build-pagescript.mjs 에서 옮김) — src/imagemeta.js → <OUT_DIR>/<name>-<ver>.min.js (+ .sri.txt).
+// 페이지 스크립트 번들 — src/imagemeta.js → <OUT_DIR>/<name>-<ver>.min.js (+ .sri.txt).
 // 의존성 없음, esbuild(vite 동봉)로 압축만. 사용: node build.mjs [출력 폴더]  (기본 ../../apps/console/public/js — 콘솔이 /js/ 로 서빙)
 // 이름은 PAGESCRIPT_NAME(기본 imagemeta — 제품명 미정 자리표시자), 버전은 PAGESCRIPT_VERSION(기본 0.1.0)
 import { build } from 'esbuild';

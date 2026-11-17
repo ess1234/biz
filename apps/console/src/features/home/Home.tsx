@@ -1,4 +1,4 @@
-/// 4-2 홈 (biz-dev-08): 시작하기 4단계(끝나면 한 줄로 접힘) + 이번 달 한도 + 최근 이미지. 연동 카드의 키별 요청 수는 2차(DC-6) — 1차는 키 목록만.
+/// 4-2 홈 (biz-dev-08): 시작하기 4단계(끝나면 한 줄로 접힘) + 이번 달 한도 + 최근 이미지. 연동 카드는 키 목록만 — 키별 요청 수는 서버 집계가 생기면(DC-6).
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

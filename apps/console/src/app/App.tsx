@@ -17,7 +17,7 @@ import { Shell } from './Shell';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
-/// 옛 주소(/me, /me/login?next=/me/start …, sai 의 B2B 빌드) → 새 주소. dossai.app /business 버튼도 이쪽으로 온다.
+/// 옛 주소(/me, /me/login?next=/me/start … — 예전 B2B 콘솔이 쓰던 주소) → 새 주소. dossai.app /business 버튼도 이쪽으로 온다.
 function LegacyRedirect() {
   const loc = useLocation();
   const map = (p: string) => {

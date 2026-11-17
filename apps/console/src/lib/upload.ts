@@ -1,4 +1,4 @@
-/// 업로드 엔진 (sai 콘솔 Upload.tsx 에서 화면을 떼고 복사, DA-2): sha256(브라우저) → assets:batch → uploads:batch → PUT(서명 URL) → complete-batch.
+/// 업로드 엔진(화면 없음 — useUploader 로 상태만): sha256(브라우저) → assets:batch → uploads:batch → PUT(서명 URL) → complete-batch.
 /// 파일 바이트는 dos 를 거치지 않는다. B2B 는 위치(GPS)를 서버에 보내지 않는다 — 제품 이미지에 필요 없고, 공개 사본에서도 지운다(L-7).
 import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';

@@ -1,5 +1,5 @@
 /// 4-7 설정 (biz-dev-08): 워크스페이스 이름 · AI 분석 · 멤버 · 내보내기 · 삭제. B2C 의 보관 기간 · Wi-Fi · 내 방은 없다.
-/// 삭제는 60일 유예 + 운영자 승인(BD-02-4). 멤버 초대는 서버에 없어서 2차(DC-5) — 1차는 소유자만 보여 준다.
+/// 삭제는 60일 유예 + 운영자 승인(BD-02-4). 멤버 초대는 서버에 아직 없어서(DC-5) 멤버 표에는 나만 보여 준다.
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';

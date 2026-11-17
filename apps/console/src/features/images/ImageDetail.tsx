@@ -32,7 +32,7 @@ export function ImageDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
   const loc = useLocation();
-  /// 목록에서 열면 그 목록의 id 순서가 state 로 온다 — 이전 · 다음 이동용
+  // 목록에서 열면 그 목록의 id 순서가 state 로 온다 — 이전 · 다음 이동용
   const ids = (loc.state as { ids?: string[] } | null)?.ids ?? [];
   const idx = id ? ids.indexOf(id) : -1;
   const asset = useAsset(id);
