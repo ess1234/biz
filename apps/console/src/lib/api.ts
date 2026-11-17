@@ -27,9 +27,7 @@ export function currentAccountId(): string | null {
 }
 /// 서버가 이 기기 id 를 다른 계정 것이라 하면(409) 버리고 새로 만든다.
 export function rotateWebDeviceId(): string {
-  const acc = currentAccountId();
-  const key = `${DEVICE_KEY}${currentUserId ? `:u:${currentUserId.slice(0, 8)}` : ''}${acc ? `:${acc}` : ''}`;
-  try { localStorage.removeItem(key); } catch { /* 무시 */ }
+  try { localStorage.removeItem(deviceKey()); } catch { /* 무시 */ }
   return webDeviceId();
 }
 
@@ -44,9 +42,13 @@ let currentUserId: string | null = null;
 export function setCurrentUserId(id: string | null): void { currentUserId = id; }
 
 /// 같은 사용자·같은 작업 계정이면 같은 id. 다른 사용자는 다른 id (서버 devices 는 계정 소유).
-export function webDeviceId(): string {
+function deviceKey(): string {
   const acc = currentAccountId();
-  const key = `${DEVICE_KEY}${currentUserId ? `:u:${currentUserId.slice(0, 8)}` : ''}${acc ? `:${acc}` : ''}`;
+  return `${DEVICE_KEY}${currentUserId ? `:u:${currentUserId.slice(0, 8)}` : ''}${acc ? `:${acc}` : ''}`;
+}
+
+export function webDeviceId(): string {
+  const key = deviceKey();
   try {
     let id = localStorage.getItem(key);
     if (!id) {

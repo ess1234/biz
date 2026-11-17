@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { BRAND, configured } from '../../lib/env';
+import { errorText } from '../../lib/errors';
 import { useSession } from '../../lib/session';
 import { supabase } from '../../lib/supabase';
 import { Notice } from './RequireAuth';
@@ -32,8 +33,8 @@ export function LoginPage() {
         if (error) throw error;
         setMsg('로그인 링크를 메일로 보냈어요. 메일의 링크를 누르면 여기로 돌아와요. 처음이면 이 링크로 가입까지 끝나요.');
       }
-    } catch (err: any) {
-      const m = String(err?.message || err);
+    } catch (err) {
+      const m = errorText(err);
       setMsg(m.includes('Invalid login credentials') ? '이메일 또는 비밀번호가 맞지 않아요' : m);
     } finally { setBusy(false); }
   }

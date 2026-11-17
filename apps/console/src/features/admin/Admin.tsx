@@ -18,7 +18,8 @@ const STATUS_LABEL: Record<string, string> = { registered: '등록', uploaded: '
 const VIS_LABEL: Record<string, string> = Object.fromEntries(Object.entries(VIS).map(([k, v]) => [k, v.label]));
 const counts = (o: Record<string, number> | undefined, labels: Record<string, string>) => Object.entries(o ?? {}).map(([k, v]) => `${labels[k] ?? k} ${v}`).join(' · ') || '—';
 
-export function useAdminPath() {
+/// 운영 API 경로 — GET /me 의 admin.path(무작위 슬러그). 운영자가 아니면 null
+function useAdminPath() {
   const { me } = useSession();
   return me?.admin?.path ?? null;
 }
@@ -50,14 +51,14 @@ export function AdminPage() {
 
       {u && (
         <section className="bc-sec">
-          <h3 style={{ fontSize: 15 }}>사용량 상위 <span className="bc-badge gray">최근 {u.days}일</span> <span className="bc-muted" style={{ fontWeight: 400 }}>{u.edge_note}</span></h3>
-          <table className="bc-table" style={{ marginTop: 8 }}>
+          <h3 className="bc-h3">사용량 상위 <span className="bc-badge gray">최근 {u.days}일</span> <span className="bc-muted">{u.edge_note}</span></h3>
+          <table className="mt-8 bc-table">
             <thead><tr><th>워크스페이스</th><th>이미지 요청</th><th>전송</th><th>변환</th><th>메타 요청</th><th>업로드</th><th>분석</th><th>저장</th></tr></thead>
             <tbody>
               {u.items.map((x) => (
                 <tr key={x.account_id}><td><Link to={`/admin/acc/${x.account_id}`}>{x.name}</Link></td><td>{x.image_requests.toLocaleString()}</td><td>{fmtMB(x.egress_bytes)}</td><td>{x.transforms.toLocaleString()}</td><td>{x.meta_requests.toLocaleString()}</td><td>{x.uploads.toLocaleString()}</td><td>{x.analyses.toLocaleString()}</td><td>{fmtMB(x.storage_bytes)}</td></tr>
               ))}
-              {u.totals && <tr style={{ fontWeight: 700 }}><td>합계</td><td>{u.totals.image_requests.toLocaleString()}</td><td>{fmtMB(u.totals.egress_bytes)}</td><td>{u.totals.transforms.toLocaleString()}</td><td>{u.totals.meta_requests.toLocaleString()}</td><td>{u.totals.uploads.toLocaleString()}</td><td>{u.totals.analyses.toLocaleString()}</td><td>{fmtMB(u.totals.storage_bytes)}</td></tr>}
+              {u.totals && <tr className="total"><td>합계</td><td>{u.totals.image_requests.toLocaleString()}</td><td>{fmtMB(u.totals.egress_bytes)}</td><td>{u.totals.transforms.toLocaleString()}</td><td>{u.totals.meta_requests.toLocaleString()}</td><td>{u.totals.uploads.toLocaleString()}</td><td>{u.totals.analyses.toLocaleString()}</td><td>{fmtMB(u.totals.storage_bytes)}</td></tr>}
             </tbody>
           </table>
         </section>
@@ -66,9 +67,9 @@ export function AdminPage() {
       <BizOps base={base} />
 
       <section className="bc-sec">
-        <h3 style={{ fontSize: 15 }}>워크스페이스 <span className="bc-badge gray">{accounts.data?.items.length ?? '–'}</span></h3>
+        <h3 className="bc-h3">워크스페이스 <span className="bc-badge gray">{accounts.data?.items.length ?? '–'}</span></h3>
         {accounts.isLoading ? <p className="bc-muted">불러오는 중…</p> : (
-          <table className="bc-table" style={{ marginTop: 8 }}>
+          <table className="mt-8 bc-table">
             <thead><tr><th>이름</th><th>멤버 · 마지막 로그인</th><th>이미지</th><th>상태</th><th>공개 범위</th><th>마지막 업로드</th></tr></thead>
             <tbody>{accounts.data?.items.map((a) => (
               <tr key={a.id}>
@@ -85,7 +86,7 @@ export function AdminPage() {
       </section>
 
       <section className="bc-sec">
-        <h3 style={{ fontSize: 15 }}>분석 큐</h3>
+        <h3 className="bc-h3">분석 큐</h3>
         {jobs.data && (
           <>
             <p>{counts(jobs.data.by_status, STATUS_LABEL)} (최근 {jobs.data.sample}건 기준){jobs.data.oldest_queued_at && <span className="bc-muted"> · 가장 오래된 대기 {fmtDateTime(jobs.data.oldest_queued_at)}</span>}</p>
@@ -112,18 +113,18 @@ function BizOps({ base }: { base: string }) {
   return (
     <>
       <section className="bc-sec">
-        <h3 style={{ fontSize: 15 }}>청구서 <span className="bc-badge gray">{period || '전체'}</span> <span className="bc-muted" style={{ fontWeight: 400 }}>결제는 수동 — 입금 확인 뒤 '결제 확인'</span></h3>
+        <h3 className="bc-h3">청구서 <span className="bc-badge gray">{period || '전체'}</span> <span className="bc-muted">결제는 수동 — 입금 확인 뒤 '결제 확인'</span></h3>
         <div className="bc-row">
-          <input style={{ width: 110, padding: '6px 10px', border: '1px solid var(--bc-line)', borderRadius: 8, font: 'inherit' }} placeholder="YYYY-MM" value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="기간" />
+          <input className="bc-input w-110" placeholder="YYYY-MM" value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="기간" />
           <button className="bc-btn small" onClick={() => setPeriod(inv.data?.previous_period ?? '')}>전월</button>
           <button className="bc-btn small" disabled={generate.isPending} onClick={() => { if (confirm('전월 청구서를 지금 만들까요? (이미 있는 워크스페이스는 건너뜀)')) generate.mutate(); }}>전월 청구서 만들기</button>
           {tot && <span className="bc-muted">{tot.count}건 · 합계 {krw(tot.total_krw)} · 미수 {krw(tot.unpaid_krw)}</span>}
         </div>
         {inv.data && inv.data.items.length > 0 && (
-          <table className="bc-table" style={{ marginTop: 8 }}>
-            <thead><tr><th>기간</th><th>워크스페이스</th><th>플랜</th><th>저장</th><th>전송</th><th style={{ textAlign: 'right' }}>합계</th><th>상태</th><th /></tr></thead>
+          <table className="mt-8 bc-table">
+            <thead><tr><th>기간</th><th>워크스페이스</th><th>플랜</th><th>저장</th><th>전송</th><th className="num">합계</th><th>상태</th><th /></tr></thead>
             <tbody>{inv.data.items.map((i) => (
-              <tr key={i.id}><td>{i.period}</td><td><Link to={`/admin/acc/${i.account.id}`}>{i.account.name}</Link></td><td>{i.plan}</td><td>{i.usage?.storage_gb} GB</td><td>{i.usage?.egress_gb} GB</td><td style={{ textAlign: 'right' }}>{krw(i.total_krw)}</td>
+              <tr key={i.id}><td>{i.period}</td><td><Link to={`/admin/acc/${i.account.id}`}>{i.account.name}</Link></td><td>{i.plan}</td><td>{i.usage?.storage_gb} GB</td><td>{i.usage?.egress_gb} GB</td><td className="num">{krw(i.total_krw)}</td>
                 <td><span className={`bc-badge${i.status === 'paid' ? '' : i.status === 'issued' ? ' warn' : ' gray'}`}>{INVOICE_STATUS[i.status]}</span></td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="bc-btn small" onClick={() => setOpen(i)}>보기</button>{' '}
@@ -139,10 +140,10 @@ function BizOps({ base }: { base: string }) {
       </section>
 
       <section className="bc-sec">
-        <h3 style={{ fontSize: 15 }}>삭제 요청 <span className="bc-badge gray">{dels.data?.items.length ?? '–'}</span> <span className="bc-muted" style={{ fontWeight: 400 }}>유예 {dels.data?.grace_days ?? 60}일 + 운영자 승인 둘 다 지나야 실행</span></h3>
+        <h3 className="bc-h3">삭제 요청 <span className="bc-badge gray">{dels.data?.items.length ?? '–'}</span> <span className="bc-muted">유예 {dels.data?.grace_days ?? 60}일 + 운영자 승인 둘 다 지나야 실행</span></h3>
         {dels.data && dels.data.items.length === 0 && <p className="bc-muted">없음</p>}
         {dels.data && dels.data.items.length > 0 && (
-          <table className="bc-table" style={{ marginTop: 8 }}>
+          <table className="mt-8 bc-table">
             <thead><tr><th>워크스페이스</th><th>요청</th><th>승인</th><th>실행 예정</th><th /></tr></thead>
             <tbody>{dels.data.items.map((d) => (
               <tr key={d.account_id}><td><Link to={`/admin/acc/${d.account_id}`}>{d.name ?? d.account_id.slice(0, 8)}</Link></td><td>{fmtDateTime(d.delete_requested_at)}</td>
@@ -154,12 +155,12 @@ function BizOps({ base }: { base: string }) {
       </section>
 
       <section className="bc-sec">
-        <h3 style={{ fontSize: 15 }}>백업 <span className="bc-muted" style={{ fontWeight: 400 }}>DB 덤프 · 원본 복제 · 복구 리허설 — 마지막 성공이 하루 넘게 비면 경보</span></h3>
+        <h3 className="bc-h3">백업 <span className="bc-muted">DB 덤프 · 원본 복제 · 복구 리허설 — 마지막 성공이 하루 넘게 비면 경보</span></h3>
         {backups.data && (
           <>
             <p>{['db_json', 'originals', 'drill'].map((k) => <span key={k} className={`bc-badge${backups.data.last_ok?.[k] ? '' : ' gray'}`} style={{ marginRight: 6 }}>{k} {backups.data.last_ok?.[k] ? fmtDateTime(backups.data.last_ok[k]) : '기록 없음'}</span>)}</p>
             {backups.data.items.length > 0 && (
-              <table className="bc-table" style={{ fontSize: 12 }}>
+              <table className="bc-small bc-table">
                 <thead><tr><th>시작</th><th>종류</th><th>대상</th><th>결과</th><th>객체</th><th>바이트</th><th>메모</th></tr></thead>
                 <tbody>{backups.data.items.map((b) => <tr key={b.id}><td>{fmtDateTime(b.started_at)}</td><td>{b.kind}</td><td className="bc-mono">{b.dest}</td><td>{b.ok ? 'OK' : '실패'}</td><td>{b.objects}</td><td>{fmtMB(b.bytes ?? 0)}</td><td>{b.note}</td></tr>)}</tbody>
               </table>
@@ -181,12 +182,12 @@ export function AdminAccountPage() {
   const d = q.data;
   return (
     <>
-      <div className="bc-row" style={{ marginTop: 0 }}><Link className="bc-btn small" to="/admin">← 운영</Link></div>
+      <div className="mt-0 bc-row"><Link className="bc-btn small" to="/admin">← 운영</Link></div>
       <h2 className="bc-h bc-sec">{d.account.name}</h2>
       <p className="bc-muted">가입 {fmtDateTime(d.account.created_at)} · 분석 작업(최근 50) {counts(d.jobs?.by_status, STATUS_LABEL)}</p>
       {d.jobs.recent_failed.length > 0 && <ul className="bc-plain">{d.jobs.recent_failed.map((f, i) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
-      <h3 className="bc-sec" style={{ fontSize: 15 }}>최근 이미지 {d.recent_assets?.length ?? 0}건 <span className="bc-badge gray">글만</span></h3>
-      <table className="bc-table" style={{ marginTop: 8 }}>
+      <h3 className="bc-h3 bc-sec">최근 이미지 {d.recent_assets?.length ?? 0}건 <span className="bc-badge gray">글만</span></h3>
+      <table className="mt-8 bc-table">
         <thead><tr><th>올림</th><th>상태</th><th>공개 범위</th><th>크기</th><th>설명</th><th>키워드</th><th>출처</th></tr></thead>
         <tbody>{(d.recent_assets ?? []).map((a) => (
           <tr key={a.id} style={a.deleted ? { opacity: .5 } : undefined}>

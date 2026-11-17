@@ -10,7 +10,7 @@ import { qk } from '../../data/keys';
 import { type Asset } from '../../data/types';
 import { ApiError, api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
-import { toastError } from '../../lib/errors';
+import { errorText, toastError } from '../../lib/errors';
 import { fmtDateTime, fmtMB } from '../../lib/format';
 import { fileUrl, useFileUrl } from '../../lib/thumbs';
 import { toast } from '../../lib/toast';
@@ -32,7 +32,8 @@ export function ImageDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
   const loc = useLocation();
-  const ids: string[] = (loc.state as any)?.ids ?? [];
+  /// 목록에서 열면 그 목록의 id 순서가 state 로 온다 — 이전 · 다음 이동용
+  const ids = (loc.state as { ids?: string[] } | null)?.ids ?? [];
   const idx = id ? ids.indexOf(id) : -1;
   const asset = useAsset(id);
   const big = useFileUrl('thumb1024', asset.data?.has_thumb ? id : null);
@@ -50,7 +51,7 @@ export function ImageDetailPage() {
   const a = asset.data;
   return (
     <>
-      <div className="bc-row" style={{ marginTop: 0 }}>
+      <div className="mt-0 bc-row">
         <Link className="bc-btn small" to="/images">← 이미지</Link>
         {idx >= 0 && ids.length > 1 && <>
           <button className="bc-btn small" disabled={idx <= 0} onClick={() => go(-1)}>‹ 이전</button>
@@ -80,9 +81,9 @@ function usePatch(a: Asset) {
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.patch<Asset>(`/assets/${a.id}`, { base_version: a.manual_version ?? 0, ...body }),
     onSuccess: () => { invalidateAsset(qc, a.id); },
-    onError: (e: any) => {
+    onError: (e) => {
       if (e instanceof ApiError && e.code === 'CONFLICT_STALE') { toast('다른 곳에서 먼저 바뀌었어요 — 최신 내용을 불러왔어요. 다시 고쳐 주세요'); qc.invalidateQueries({ queryKey: qk.asset(a.id) }); }
-      else toast(`저장하지 못했어요: ${e.message}`);
+      else toast(`저장하지 못했어요: ${errorText(e)}`);
     },
   });
 }
@@ -98,10 +99,10 @@ function Description({ a }: { a: Asset }) {
   const origin = sources.includes('manual') ? '직접 고침' : sources.includes('ai') ? 'AI 생성' : null;
   return (
     <section className="bc-box">
-      <h3 style={{ fontSize: 15 }}>설명 {origin ? <span className={`bc-badge${origin === 'AI 생성' ? ' gray' : ''}`}>{origin}</span> : <span className="bc-badge warn">없음</span>}</h3>
+      <h3 className="bc-h3">설명 {origin ? <span className={`bc-badge${origin === 'AI 생성' ? ' gray' : ''}`}>{origin}</span> : <span className="bc-badge warn">없음</span>}</h3>
       <div className="bc-tabs" style={{ marginTop: 10 }}>{LANGS.map(([k, label]) => <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{label}{caps[k] ? '' : ' ·'}</button>)}</div>
       <textarea className="bc-textarea" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="이 언어의 설명 (alt 로 나가요)" rows={4} />
-      <div className="bc-row" style={{ marginTop: 8 }}>
+      <div className="mt-8 bc-row">
         <button className="bc-btn small primary" disabled={!dirty || patch.isPending} onClick={() => patch.mutate({ caption: { [lang]: draft } }, { onSuccess: () => toast('저장했어요 — 사이트에는 몇 분 안에 반영돼요') })}>저장</button>
         {dirty && <button className="bc-btn small" onClick={() => setDraft(caps[lang] ?? '')}>되돌리기</button>}
       </div>
@@ -115,7 +116,7 @@ function Keywords({ a }: { a: Asset }) {
   const patch = usePatch(a);
   return (
     <section className="bc-box">
-      <h3 style={{ fontSize: 15 }}>키워드</h3>
+      <h3 className="bc-h3">키워드</h3>
       <div className="bc-chips">
         {keywords.map((k) => <span key={k} className="bc-chip">{k}<button aria-label={`${k} 빼기`} disabled={patch.isPending} onClick={() => patch.mutate({ keywords_remove: [k] })}>✕</button></span>)}
         <form onSubmit={(e) => { e.preventDefault(); const v = kw.trim(); if (v) { patch.mutate({ keywords_add: [v] }); setKw(''); } }}>
@@ -130,27 +131,27 @@ function Visibility({ a }: { a: Asset }) {
   const patch = usePatch(a);
   return (
     <section className="bc-box">
-      <h3 style={{ fontSize: 15 }}>공개 범위</h3>
+      <h3 className="bc-h3">공개 범위</h3>
       <div className="bc-seg" role="radiogroup" aria-label="공개 범위">
         {VIS_ORDER.map((v) => (
           <button key={v} role="radio" aria-checked={a.visibility === v} className={`${v}${a.visibility === v ? ' on' : ''}`} disabled={patch.isPending || Boolean(a.deleted_at)}
             onClick={() => a.visibility !== v && patch.mutate({ visibility: v }, { onSuccess: () => toast(`${VIS[v].label} 로 바꿨어요`) })}>{VIS[v].label}</button>
         ))}
       </div>
-      <p className="bc-muted" style={{ marginBottom: 0 }}>{VIS[a.visibility]?.help}</p>
+      <p className="mb-0 bc-muted">{VIS[a.visibility]?.help}</p>
     </section>
   );
 }
 
 function UseIt({ a }: { a: Asset }) {
   if (a.visibility === 'private' || a.deleted_at) {
-    return <section className="bc-box"><h3 style={{ fontSize: 15 }}>가져다 쓰기</h3><p className="bc-muted" style={{ marginBottom: 0 }}>비공개 · 휴지통 이미지는 주소가 나가지 않아요. 공개 범위를 사이트나 공개로 바꾸면 생겨요.</p></section>;
+    return <section className="bc-box"><h3 className="bc-h3">가져다 쓰기</h3><p className="mb-0 bc-muted">비공개 · 휴지통 이미지는 주소가 나가지 않아요. 공개 범위를 사이트나 공개로 바꾸면 생겨요.</p></section>;
   }
   const url = permanentUrl(a.id);
   const alt = (a.chosen?.caption?.ko ?? a.caption ?? '').replace(/"/g, '&quot;');
   return (
     <section className="bc-box">
-      <h3 style={{ fontSize: 15 }}>가져다 쓰기</h3>
+      <h3 className="bc-h3">가져다 쓰기</h3>
       <Copy label="영구 주소 — 이미지를 바꿔도 주소는 그대로" text={url} />
       <Copy label="변형 — 폭(400 · 800 · 1200)과 포맷(webp · avif)" text={`${url}?w=800&f=webp`} />
       <Copy label="img 태그 — 스크립트를 붙인 사이트면 alt 는 비워 둬도 채워져요" text={`<img src="${url}?w=800" alt="${alt}" loading="lazy">`} />
@@ -177,14 +178,14 @@ function Info({ a }: { a: Asset }) {
   const category = a.chosen?.details?.category;
   return (
     <section className="bc-box">
-      <h3 style={{ fontSize: 15 }}>정보</h3>
+      <h3 className="bc-h3">정보</h3>
       <dl className="bc-kv" style={{ marginTop: 10, gridTemplateColumns: '96px 1fr' }}>
         <dt>크기</dt><dd>{a.width && a.height ? `${a.width}×${a.height}` : '—'} · {a.bytes ? fmtMB(a.bytes) : '—'}</dd>
         <dt>형식</dt><dd>{a.mime ?? '—'}</dd>
         <dt>올린 날</dt><dd>{fmtDateTime(a.created_at)}</dd>
         {category && <><dt>분류</dt><dd>{category}</dd></>}
         <dt>위치 정보</dt><dd>{a.lat != null ? '원본에 있음 · 공개 사본에서는 지워요' : '없음'}</dd>
-        <dt>id</dt><dd><code style={{ fontSize: 12 }}>{a.id}</code></dd>
+        <dt>id</dt><dd><code className="bc-small">{a.id}</code></dd>
       </dl>
       <div className="bc-row">
         <button className="bc-btn small" onClick={() => download('original')}>원본 받기</button>

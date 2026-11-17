@@ -48,7 +48,7 @@ function Meter({ metric, used, limit, warn }: { metric: string; used: number; li
           <div className="bar"><i style={{ width: `${pct}%` }} /></div>
           <div className="bc-muted" style={{ fontSize: 12, marginTop: 4 }}>한도 {fmtMetric(metric, limit)} · {pct}%</div>
         </div>
-      ) : <div className="bc-muted" style={{ fontSize: 12 }}>한도 없음</div>}
+      ) : <div className="bc-small bc-muted">한도 없음</div>}
     </div>
   );
 }
@@ -62,8 +62,8 @@ function UsageTab() {
   const max = Math.max(1, ...(u?.days ?? []).map((d) => d.metrics[pick] ?? 0));
   return (
     <>
-      <p className="bc-muted" style={{ marginTop: 0 }}>여기 보이는 숫자가 청구 기준이에요. {u?.edge_note ?? '전송 · 이미지 요청 · 변환은 전날까지 집계돼요.'}</p>
-      <div className="bc-row" style={{ marginTop: 0 }}>
+      <p className="mt-0 bc-muted">여기 보이는 숫자가 청구 기준이에요. {u?.edge_note ?? '전송 · 이미지 요청 · 변환은 전날까지 집계돼요.'}</p>
+      <div className="mt-0 bc-row">
         <button className="bc-btn small" onClick={() => setOffset((o) => o + 1)}>◀ 이전 달</button>
         <b>{range.label}</b>
         <button className="bc-btn small" disabled={offset === 0} onClick={() => setOffset((o) => Math.max(0, o - 1))}>다음 달 ▶</button>
@@ -74,7 +74,7 @@ function UsageTab() {
       {u && (
         <>
           <div className="bc-cards bc-sec">{METRICS.map((m) => <Meter key={m} metric={m} used={u.totals[m] ?? 0} limit={u.limits[m]} warn={u.warnings?.includes(m)} />)}</div>
-          <h3 className="bc-sec" style={{ fontSize: 15 }}>일별 <select className="bc-select" value={pick} onChange={(e) => setPick(e.target.value)}>{METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}</select></h3>
+          <h3 className="bc-h3 bc-sec">일별 <select className="bc-select" value={pick} onChange={(e) => setPick(e.target.value)}>{METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}</select></h3>
           {u.days.length === 0 ? <p className="bc-muted">이 달에는 기록이 없어요.</p> : (
             <table className="bc-table bc-days"><tbody>
               {u.days.map((d) => { const v = d.metrics[pick] ?? 0; return (
@@ -98,14 +98,14 @@ function PlanTab() {
       <div className="bc-box">
         <div className="bc-muted">지금 플랜</div>
         <div className="bc-big">{p.label} <span className="bc-badge gray">{p.overage_policy === 'block' ? '넘으면 막힘' : '초과분 청구'}</span></div>
-        <dl className="bc-kv" style={{ marginTop: 12 }}>
+        <dl className="mt-12 bc-kv">
           <dt>기본료</dt><dd>{krw(p.prices.base_krw)} / 월 (부가세 별도)</dd>
           <dt>저장 초과</dt><dd>{krw(p.prices.storage_krw_per_gb)} / GB</dd>
           <dt>전송 초과</dt><dd>{krw(p.prices.egress_krw_per_gb)} / GB</dd>
         </dl>
-        <p className="bc-muted" style={{ marginBottom: 0 }}>{p.billing_note}</p>
+        <p className="mb-0 bc-muted">{p.billing_note}</p>
       </div>
-      <h3 className="bc-sec" style={{ fontSize: 15 }}>이번 달 한도</h3>
+      <h3 className="bc-h3 bc-sec">이번 달 한도</h3>
       <div className="bc-cards">{(['storage_bytes', 'egress_bytes', 'transforms', 'analyses'] as const).map((m) => <Meter key={m} metric={m} used={p.month.totals[m] ?? 0} limit={p.limits[m]} warn={p.month.warnings.includes(m)} />)}</div>
       <p className="bc-muted bc-sec">플랜을 바꾸려면 담당자에게 요청해 주세요. 바꾼 플랜은 다음 청구서부터 적용돼요.</p>
     </>
@@ -117,15 +117,15 @@ function InvoicesTab() {
   const [open, setOpen] = useState<Invoice | null>(null);
   return (
     <>
-      <p className="bc-muted" style={{ marginTop: 0 }}>매월 1일에 전월 청구서가 만들어져요. 결제는 계좌이체 · 세금계산서로 하고, 입금이 확인되면 '결제 완료'로 바뀌어요.</p>
+      <p className="mt-0 bc-muted">매월 1일에 전월 청구서가 만들어져요. 결제는 계좌이체 · 세금계산서로 하고, 입금이 확인되면 '결제 완료'로 바뀌어요.</p>
       {inv.isLoading && <p className="bc-muted">불러오는 중…</p>}
       {inv.data && inv.data.items.length === 0 && <p className="bc-muted">아직 청구서가 없어요.</p>}
       {inv.data && inv.data.items.length > 0 && (
         <table className="bc-table">
-          <thead><tr><th>기간</th><th>플랜</th><th>저장(월말)</th><th>전송</th><th style={{ textAlign: 'right' }}>합계(부가세 포함)</th><th>상태</th><th /></tr></thead>
+          <thead><tr><th>기간</th><th>플랜</th><th>저장(월말)</th><th>전송</th><th className="num">합계(부가세 포함)</th><th>상태</th><th /></tr></thead>
           <tbody>{inv.data.items.map((i) => (
             <tr key={i.id}><td>{i.period}</td><td>{i.plan}</td><td>{i.usage?.storage_gb?.toFixed?.(2) ?? '—'} GB</td><td>{i.usage?.egress_gb?.toFixed?.(2) ?? '—'} GB</td>
-              <td style={{ textAlign: 'right' }}>{krw(i.total_krw)}</td>
+              <td className="num">{krw(i.total_krw)}</td>
               <td><span className={`bc-badge${i.status === 'paid' ? '' : i.status === 'issued' ? ' warn' : ' gray'}`}>{INVOICE_STATUS[i.status]}</span></td>
               <td><button className="bc-btn small" onClick={() => setOpen(i)}>보기</button></td></tr>
           ))}</tbody>

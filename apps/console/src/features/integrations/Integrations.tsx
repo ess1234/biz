@@ -66,7 +66,10 @@ function KeyForm({ initial, onDone }: { initial?: SiteKey; onDone: () => void })
       return initial ? api.patch<SiteKey>(`/site-keys/${initial.id}`, body) : api.post<SiteKey>('/site-keys', body);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.siteKeys }); toast(initial ? '저장했어요' : '사이트 키를 만들었어요'); onDone(); },
-    onError: (e: any) => toast(e instanceof ApiError && e.details && (e.details as any).bad ? `형식이 맞지 않아요: ${(e.details as any).bad.join(', ')}` : e.message),
+    onError: (e) => {
+      const bad = e instanceof ApiError ? (e.details as { bad?: string[] } | undefined)?.bad : undefined;
+      if (bad) toast(`형식이 맞지 않아요: ${bad.join(', ')}`); else toastError(e);
+    },
   });
   return (
     <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
@@ -100,14 +103,14 @@ function SiteKeysTab() {
   const canEdit = canManage(me);
   return (
     <>
-      <p className="bc-muted" style={{ marginTop: 0 }}>사이트 키는 비밀이 아니라 공개 값이에요. 허용 출처로만 묶여서, 등록한 사이트에서만 설명을 받아 가요.</p>
-      {editing === 'new' && <div className="bc-box"><h3 style={{ fontSize: 15 }}>새 사이트 키</h3><KeyForm onDone={() => setEditing(null)} /></div>}
-      {!editing && canEdit && <div className="bc-row" style={{ marginTop: 0 }}><button className="bc-btn primary" onClick={() => setEditing('new')}>사이트 키 만들기</button></div>}
+      <p className="mt-0 bc-muted">사이트 키는 비밀이 아니라 공개 값이에요. 허용 출처로만 묶여서, 등록한 사이트에서만 설명을 받아 가요.</p>
+      {editing === 'new' && <div className="bc-box"><h3 className="bc-h3">새 사이트 키</h3><KeyForm onDone={() => setEditing(null)} /></div>}
+      {!editing && canEdit && <div className="mt-0 bc-row"><button className="bc-btn primary" onClick={() => setEditing('new')}>사이트 키 만들기</button></div>}
       {q.isLoading && <p className="bc-muted">불러오는 중…</p>}
       {!q.isLoading && !active.length && editing !== 'new' && <p className="bc-muted">아직 키가 없어요. 첫 키를 만들면 바로 끼워 넣기 코드가 나와요.</p>}
       {active.map((k) => (
         <div className="bc-box bc-sec" key={k.id}>
-          <div className="bc-row" style={{ marginTop: 0 }}>
+          <div className="mt-0 bc-row">
             <div style={{ flex: 1, minWidth: 0 }}>
               <b>{k.label ?? '이름 없음'}</b> <code className="bc-keycode">{k.key}</code>
               <div className="bc-muted">허용 출처 {k.allowed_origins.join(' · ') || '—'} · 변형 {k.allowed_variants.join(', ')} · {fmtDate(k.created_at)}</div>
@@ -132,8 +135,8 @@ function BuildTab() {
   return (
     <>
       <div className="bc-box">
-        <h3 style={{ fontSize: 15 }}>언제 쓰나</h3>
-        <p className="bc-muted" style={{ marginBottom: 0 }}>사이트를 빌드해서 배포하는 경우(Vite 등). 빌드할 때 설명을 한 번에 받아 HTML 에 alt · 구조화 데이터를 미리 넣어서, 크롤러가 자바스크립트 없이 읽고 방문자 브라우저에서 할 일이 없어요.
+        <h3 className="bc-h3">언제 쓰나</h3>
+        <p className="mb-0 bc-muted">사이트를 빌드해서 배포하는 경우(Vite 등). 빌드할 때 설명을 한 번에 받아 HTML 에 alt · 구조화 데이터를 미리 넣어서, 크롤러가 자바스크립트 없이 읽고 방문자 브라우저에서 할 일이 없어요.
           빌드 연동은 사이트 키가 아니라 <Link to="/integrations?tab=api">API 키</Link>(읽기)를 써요 — 빌드 서버의 환경 변수에만 두고 브라우저 코드에 넣지 마세요.</p>
       </div>
       <CodeBox title="vite.config.js" when="Vite 빌드 플러그인. 이미지 주소(/i/{id})를 소스에서 찾아 alt 를 채우고, 결과는 1시간 캐시해요." code={`import imagemeta from '@imagemeta/vite'
@@ -185,7 +188,7 @@ function ApiKeysTab() {
   const items = q.data?.items ?? [];
   return (
     <>
-      <p className="bc-muted" style={{ marginTop: 0 }}>서버 · 빌드에서 쓰는 비밀 키예요. <code>Authorization: ApiKey &lt;키&gt;</code> 로 호출해요. 원문은 만들 때 한 번만 보여요 — 서버는 해시만 보관해요.</p>
+      <p className="mt-0 bc-muted">서버 · 빌드에서 쓰는 비밀 키예요. <code>Authorization: ApiKey &lt;키&gt;</code> 로 호출해요. 원문은 만들 때 한 번만 보여요 — 서버는 해시만 보관해요.</p>
       {issued?.key && (
         <div className="bc-box warn">
           <b>새 키 — 지금 복사해 두세요. 다시 볼 수 없어요.</b>
@@ -195,7 +198,7 @@ function ApiKeysTab() {
       )}
       {canEdit && (
         <form className="bc-box bc-sec" onSubmit={(e) => { e.preventDefault(); if (scopes.size) create.mutate(); }}>
-          <h3 style={{ fontSize: 15 }}>새 API 키</h3>
+          <h3 className="bc-h3">새 API 키</h3>
           <label className="bc-field">이름 (선택)<input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예: 빌드 서버" maxLength={60} /></label>
           <div className="bc-field">범위 — 필요한 만큼만</div>
           {SCOPES.map((s) => (

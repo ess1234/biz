@@ -47,7 +47,6 @@ export function fileUrl(variant: Variant, id: string): Promise<string | null> {
   });
 }
 
-export function invalidateFileUrl(variant: Variant, id: string) { cache.delete(key(variant, id)); }
 
 export function useFileUrl(variant: Variant, id: string | null | undefined, enabled = true): string | null {
   const [url, setUrl] = useState<string | null>(() => (id ? cache.get(key(variant, id))?.url ?? null : null));

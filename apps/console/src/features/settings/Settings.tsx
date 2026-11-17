@@ -29,7 +29,7 @@ export function SettingsPage() {
   const rename = useMutation({
     mutationFn: () => api.patch(`/accounts/${acc.id}`, { name: name.trim() }),
     onSuccess: async () => { toast('이름을 바꿨어요'); await refresh(); },
-    onError: (e: any) => toast(e instanceof ApiError && (e.status === 404 || e.status === 405) ? '이름 바꾸기는 아직 서버에 없어요' : e.message),
+    onError: toastError,
   });
 
   const ai = useMutation({
@@ -42,7 +42,7 @@ export function SettingsPage() {
   const startExport = useMutation({
     mutationFn: () => api.post('/account:export', {}),
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.exports }); toast('내보내기를 요청했어요 — 준비되면 여기서 받을 수 있어요'); },
-    onError: (e: any) => toast(e instanceof ApiError && e.code === 'CONFLICT_DUP' ? '이미 진행 중인 내보내기가 있어요' : e.message),
+    onError: (e) => (e instanceof ApiError && e.code === 'CONFLICT_DUP' ? toast('이미 진행 중인 내보내기가 있어요') : toastError(e)),
   });
 
   const [confirm, setConfirm] = useState('');
@@ -59,13 +59,13 @@ export function SettingsPage() {
       <PageHead title="설정" sub="워크스페이스 이름, AI 분석, 멤버, 내보내기와 삭제를 관리해요." />
 
       <section className="bc-box">
-        <h3 style={{ fontSize: 15 }}>워크스페이스</h3>
-        <dl className="bc-kv" style={{ marginTop: 12 }}>
+        <h3 className="bc-h3">워크스페이스</h3>
+        <dl className="mt-12 bc-kv">
           <dt>이름</dt>
           <dd>
             {owner ? (
-              <form className="bc-row" style={{ marginTop: 0 }} onSubmit={(e) => { e.preventDefault(); if (name.trim() && name.trim() !== acc.name) rename.mutate(); }}>
-                <input className="bc-field" style={{ margin: 0, padding: '6px 10px', border: '1px solid var(--bc-line)', borderRadius: 8, font: 'inherit', minWidth: 220 }} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} aria-label="워크스페이스 이름" />
+              <form className="mt-0 bc-row" onSubmit={(e) => { e.preventDefault(); if (name.trim() && name.trim() !== acc.name) rename.mutate(); }}>
+                <input className="bc-input w-min-220 m-0 bc-field" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} aria-label="워크스페이스 이름" />
                 <button className="bc-btn small" type="submit" disabled={rename.isPending || !name.trim() || name.trim() === acc.name}>저장</button>
               </form>
             ) : acc.name}
@@ -76,7 +76,7 @@ export function SettingsPage() {
       </section>
 
       <section className="bc-sec bc-box">
-        <h3 style={{ fontSize: 15 }}>AI 분석 {s?.ai_consent_at ? <span className="bc-badge">켜짐</span> : <span className="bc-badge gray">꺼짐</span>}</h3>
+        <h3 className="bc-h3">AI 분석 {s?.ai_consent_at ? <span className="bc-badge">켜짐</span> : <span className="bc-badge gray">꺼짐</span>}</h3>
         <p className="bc-muted">켜면 올린 이미지를 외부 AI 로 보내 4개 언어 설명 · 키워드를 만들어요. 끄면 앞으로 올리는 이미지는 보내지 않고, 대기 중인 분석도 취소해요. 이미 만든 설명은 남아요.</p>
         {s?.ai_consent_at && <p className="bc-muted">{fmtDate(s.ai_consent_at)} 에 켰어요.</p>}
         {owner && s && (
@@ -89,19 +89,19 @@ export function SettingsPage() {
       </section>
 
       <section className="bc-sec bc-box">
-        <h3 style={{ fontSize: 15 }}>멤버</h3>
-        <table className="bc-table" style={{ marginTop: 8 }}><tbody>
+        <h3 className="bc-h3">멤버</h3>
+        <table className="mt-8 bc-table"><tbody>
           <tr><td>{session?.user.email}</td><td className="bc-muted">{acc.role === 'owner' ? '소유자' : acc.role === 'admin' ? '관리자' : '멤버'} · 나</td></tr>
         </tbody></table>
-        <p className="bc-muted" style={{ marginBottom: 0 }}>{(acc.member_count ?? 1) > 1 ? `멤버 ${acc.member_count}명 중 나만 보여요. ` : ''}멤버 초대는 다음 단계에서 들어와요.</p>
+        <p className="mb-0 bc-muted">{(acc.member_count ?? 1) > 1 ? `멤버 ${acc.member_count}명 중 나만 보여요. ` : ''}멤버 초대는 다음 단계에서 들어와요.</p>
       </section>
 
       <section className="bc-sec bc-box">
-        <h3 style={{ fontSize: 15 }}>내보내기</h3>
+        <h3 className="bc-h3">내보내기</h3>
         <p className="bc-muted">워크스페이스의 이미지 원본과 설명을 zip 으로 받아요. zip 은 서버의 정기 작업이 만들어서 준비까지 하루가 걸릴 수 있어요. 받기 링크는 7일 동안 열려요.</p>
         {owner && <div className="bc-row"><button className="bc-btn" disabled={startExport.isPending} onClick={() => startExport.mutate()}>내보내기 시작</button></div>}
         {exports.data && exports.data.items.length > 0 && (
-          <table className="bc-table" style={{ marginTop: 12 }}>
+          <table className="mt-12 bc-table">
             <thead><tr><th>요청</th><th>상태</th><th>크기</th><th /></tr></thead>
             <tbody>{exports.data.items.map((x) => (
               <tr key={x.id}>
@@ -116,11 +116,11 @@ export function SettingsPage() {
       </section>
 
       <section className="bc-sec bc-box danger">
-        <h3 style={{ fontSize: 15 }}>워크스페이스 삭제</h3>
+        <h3 className="bc-h3">워크스페이스 삭제</h3>
         <p className="bc-muted">삭제를 요청하면 바로 모든 화면 · 키 · 이미지 주소가 멈춰요. {grace}일 유예 뒤 운영자가 승인하면 이미지 · 설명 · 키가 영구 삭제돼요. 유예 기간에는 취소할 수 있어요.</p>
         {acc.role === 'owner' ? (
           <div className="bc-row">
-            <input style={{ padding: '7px 10px', border: '1px solid var(--bc-line)', borderRadius: 8, font: 'inherit', minWidth: 220 }} placeholder={`확인: ${acc.name}`} value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-label="워크스페이스 이름 확인" />
+            <input className="bc-input w-min-220" placeholder={`확인: ${acc.name}`} value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-label="워크스페이스 이름 확인" />
             <button className="bc-btn danger" disabled={del.isPending || confirm !== acc.name} onClick={() => del.mutate()}>삭제 요청</button>
           </div>
         ) : <p className="bc-muted">소유자만 요청할 수 있어요.</p>}

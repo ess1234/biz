@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useSettings } from '../../data/hooks';
-import { ApiError, api } from '../../lib/api';
+import { api } from '../../lib/api';
 import { BRAND } from '../../lib/env';
+import { errorText } from '../../lib/errors';
 import { useSession } from '../../lib/session';
-import { toast } from '../../lib/toast';
 import { markWelcomed } from './welcomed';
 
 export function WelcomePage() {
@@ -28,20 +28,15 @@ export function WelcomePage() {
     try {
       const trimmed = name.trim();
       if (trimmed && trimmed !== acc.name) {
-        try { await api.patch(`/accounts/${acc.id}`, { name: trimmed }); }
-        catch (err) {
-          // 서버에 이름 바꾸기가 아직 배포되지 않았으면(404/405) 이름은 그대로 두고 진행
-          if (err instanceof ApiError && (err.status === 404 || err.status === 405)) toast('이름 바꾸기는 아직 서버에 없어요 — 설정에서 나중에 바꿀 수 있어요');
-          else throw err;
-        }
+        await api.patch(`/accounts/${acc.id}`, { name: trimmed });
       }
       if (ai && !settings.data?.ai_consent_at) await api.patch('/settings', { ai_consent: true });
       markWelcomed(acc.id);
       await qc.invalidateQueries();
       await refresh();
       nav('/', { replace: true });
-    } catch (err: any) {
-      setMsg(err?.message ?? String(err));
+    } catch (err) {
+      setMsg(errorText(err));
     } finally { setBusy(false); }
   }
 

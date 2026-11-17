@@ -103,7 +103,7 @@ export function HomePage() {
               </div>
             );
           })}
-          {usage.data && <p className="bc-muted" style={{ marginBottom: 0 }}>한도를 넘으면 {usage.data.overage_policy === 'block' ? '이번 달 남은 기간 동안 막혀요' : '초과분이 청구돼요'}. 전송 · 요청 수치는 전날까지 집계돼요.</p>}
+          {usage.data && <p className="mb-0 bc-muted">한도를 넘으면 {usage.data.overage_policy === 'block' ? '이번 달 남은 기간 동안 막혀요' : '초과분이 청구돼요'}. 전송 · 요청 수치는 전날까지 집계돼요.</p>}
         </div>
         <div className="bc-box">
           <div className="bc-boxhead">
@@ -112,7 +112,7 @@ export function HomePage() {
           </div>
           {keys.isLoading && <p className="bc-muted">불러오는 중…</p>}
           {keys.data && activeKeys.length === 0 && (
-            <p className="bc-muted" style={{ marginBottom: 0 }}>아직 사이트 키가 없어요. <Link to="/integrations">사이트 키 만들기</Link></p>
+            <p className="mb-0 bc-muted">아직 사이트 키가 없어요. <Link to="/integrations">사이트 키 만들기</Link></p>
           )}
           {activeKeys.length > 0 && (
             <ul className="bc-keylist">
@@ -133,7 +133,7 @@ export function HomePage() {
               })}
             </ul>
           )}
-          {activeKeys.length > 5 && <p className="bc-muted" style={{ marginBottom: 0 }}>외 {activeKeys.length - 5}개 — 관리에서 모두 보기</p>}
+          {activeKeys.length > 5 && <p className="mb-0 bc-muted">외 {activeKeys.length - 5}개 — 관리에서 모두 보기</p>}
         </div>
       </div>
 

@@ -132,8 +132,8 @@ export function ImagesPage() {
       <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,.heic,.heif" style={{ display: 'none' }} onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
 
       {up.items.length > 0 && (
-        <div className="bc-box bc-sec" style={{ marginTop: 12 }}>
-          <div className="bc-row" style={{ marginTop: 0 }}>
+        <div className="mt-12 bc-box bc-sec">
+          <div className="mt-0 bc-row">
             <b>올리기 {up.items.length}개</b>
             <span className="bc-muted">완료 {counts.done ?? 0} · 이미 있음 {counts.dup ?? 0} · 실패 {counts.error ?? 0}</span>
             <span className="bc-spacer" />

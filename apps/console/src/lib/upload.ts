@@ -5,12 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { qk } from '../data/keys';
 import { api, webDeviceId } from './api';
+import { errorText } from './errors';
 
 export type UploadItem = { key: number; file: File; status: 'wait' | 'hash' | 'register' | 'upload' | 'complete' | 'done' | 'dup' | 'error'; assetId?: string; error?: string; progress?: number };
 
 export const UPLOAD_LABEL: Record<UploadItem['status'], string> = { wait: '대기', hash: '확인 중', register: '등록', upload: '올리는 중', complete: '마무리', done: '완료', dup: '이미 있음', error: '실패' };
 const ACCEPT = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
-export const isImageFile = (f: File) => ACCEPT.includes(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name);
+const isImageFile = (f: File) => ACCEPT.includes(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name);
 
 async function sha256Hex(file: File): Promise<string> {
   const d = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
@@ -62,13 +63,13 @@ export function useUploader() {
             const sha = await sha256Hex(it.file);
             regs.push({ key: it.key, body: { local_id: `web:${webDeviceId()}:${sha.slice(0, 16)}`, sha256: sha, mime: it.file.type || 'image/jpeg', bytes: it.file.size, file_name: it.file.name,
               taken_at: it.file.lastModified ? new Date(it.file.lastModified).toISOString() : undefined } });
-          } catch (e: any) { update(it.key, { status: 'error', error: `파일 읽기: ${e.message}` }); }
+          } catch (e) { update(it.key, { status: 'error', error: `파일 읽기: ${errorText(e)}` }); }
         }
         if (!regs.length) continue;
         regs.forEach(({ key }) => update(key, { status: 'register' }));
         let res: { items: { local_id: string; asset_id?: string; upload_required?: boolean; error?: { message: string } }[] };
         try { res = await api.post('/assets:batch', { items: regs.map((r) => r.body) }); }
-        catch (e: any) { regs.forEach(({ key }) => update(key, { status: 'error', error: `등록: ${e.message}` })); continue; }
+        catch (e) { regs.forEach(({ key }) => update(key, { status: 'error', error: `등록: ${errorText(e)}` })); continue; }
         const toUpload: { key: number; assetId: string; file: File }[] = [];
         for (const r of res.items) {
           const reg = regs.find((x) => x.body.local_id === r.local_id);
@@ -81,7 +82,7 @@ export function useUploader() {
         if (!toUpload.length) continue;
         let urls: { items: { asset_id: string; url?: string; headers?: Record<string, string>; token?: string }[] };
         try { urls = await api.post('/uploads:batch', { asset_ids: toUpload.map((t) => t.assetId) }); }
-        catch (e: any) { toUpload.forEach(({ key }) => update(key, { status: 'error', error: `주소: ${e.message}` })); continue; }
+        catch (e) { toUpload.forEach(({ key }) => update(key, { status: 'error', error: `주소: ${errorText(e)}` })); continue; }
         const completed: string[] = [];
         for (const t of toUpload) {
           const u = urls.items.find((x) => x.asset_id === t.assetId);
@@ -91,7 +92,7 @@ export function useUploader() {
             await putWithProgress(u.url, t.file, u.headers ?? {}, u.token, (p) => update(t.key, { progress: p }));
             update(t.key, { status: 'complete' });
             completed.push(t.assetId);
-          } catch (e: any) { update(t.key, { status: 'error', error: e.message }); }
+          } catch (e) { update(t.key, { status: 'error', error: errorText(e) }); }
         }
         if (!completed.length) continue;
         try {
@@ -100,7 +101,7 @@ export function useUploader() {
             const t = toUpload.find((x) => x.assetId === d.id);
             if (t) update(t.key, d.ok ? { status: 'done' } : { status: 'error', error: d.error?.message ?? d.error?.code });
           }
-        } catch (e: any) { toUpload.filter((t) => completed.includes(t.assetId)).forEach(({ key }) => update(key, { status: 'error', error: `마무리: ${e.message}` })); }
+        } catch (e) { toUpload.filter((t) => completed.includes(t.assetId)).forEach(({ key }) => update(key, { status: 'error', error: `마무리: ${errorText(e)}` })); }
       }
       qc.invalidateQueries({ queryKey: qk.assets });
     } finally { setRunning(false); }
