@@ -24,13 +24,7 @@ function PersonMenu() {
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
-  async function changePassword() {
-    const pw = window.prompt('새 비밀번호 (8자 이상)');
-    if (!pw) return;
-    if (pw.length < 8) { toast('8자 이상이어야 해요'); return; }
-    const { error } = await supabase().auth.updateUser({ password: pw });
-    toast(error ? `바꾸지 못했어요: ${error.message}` : '비밀번호를 바꿨어요');
-  }
+  const [pwOpen, setPwOpen] = useState(false);
   return (
     <div className="bc-person" ref={ref}>
       <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
@@ -41,10 +35,51 @@ function PersonMenu() {
       {open && (
         <div className="bc-menu" role="menu">
           <div className="who">{session?.user.email}</div>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); changePassword(); }}><KeyRound className="bc-ico" />비밀번호 바꾸기</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); setPwOpen(true); }}><KeyRound className="bc-ico" />비밀번호 바꾸기</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); signOut(); }}><LogOut className="bc-ico" />로그아웃</button>
         </div>
       )}
+      {pwOpen && <PasswordDialog email={session?.user.email ?? ''} onClose={() => setPwOpen(false)} />}
+    </div>
+  );
+}
+
+/// 비밀번호 정하기 · 바꾸기 — 메일 링크로만 들어온 계정도 여기서 처음 정한다. window.prompt 는 입력이 그대로 보이고 내장 브라우저에서는 막혀 있어 쓰지 않는다.
+function PasswordDialog({ email, onClose }: { email: string; onClose: () => void }) {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [onClose]);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (pw.length < 8) { setMsg('8자 이상이어야 해요'); return; }
+    if (pw !== pw2) { setMsg('두 칸이 같지 않아요'); return; }
+    setBusy(true); setMsg(null);
+    const { error } = await supabase().auth.updateUser({ password: pw });
+    setBusy(false);
+    if (error) { setMsg(`바꾸지 못했어요: ${error.message}`); return; }
+    toast('비밀번호를 바꿨어요');
+    onClose();
+  }
+  return (
+    <div className="bc-sheet-backdrop" onClick={onClose}>
+      <form className="bc-sheet narrow" onClick={(e) => e.stopPropagation()} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pw-title">
+        <h3 id="pw-title" className="bc-h3 mt-0">비밀번호 바꾸기</h3>
+        <p className="bc-muted">{email}</p>
+        <input type="email" autoComplete="username" value={email} readOnly hidden />
+        <label className="bc-field">새 비밀번호 (8자 이상)<input type="password" autoComplete="new-password" required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} autoFocus /></label>
+        <label className="bc-field">한 번 더<input type="password" autoComplete="new-password" required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
+        {msg && <p className="bc-msg">{msg}</p>}
+        <div className="bc-row">
+          <button className="bc-btn primary" type="submit" disabled={busy}>{busy ? '바꾸는 중…' : '바꾸기'}</button>
+          <button className="bc-btn" type="button" onClick={onClose}>취소</button>
+        </div>
+      </form>
     </div>
   );
 }

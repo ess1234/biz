@@ -245,6 +245,7 @@ h1 .bc-badge, h2 .bc-badge, h3 .bc-badge { margin-left: 0; }
 .bc-days td { padding: 6px 10px; }
 .bc-sheet-backdrop { position: fixed; inset: 0; background: var(--bc-overlay); display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px; z-index: 30; overflow: auto; }
 .bc-sheet { background: var(--bc-card); border: 1px solid var(--bc-line); border-radius: var(--bc-radius-lg); padding: 24px; max-width: 760px; width: 100%; box-shadow: var(--bc-pop); }
+.bc-sheet.narrow { max-width: 420px; }
 .bc-plain { list-style: none; padding: 0; margin: 8px 0 0; }
 .bc-plain li { padding: 8px 0; border-bottom: 1px solid var(--bc-line-soft); }
 .bc-mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px; word-break: break-all; }
