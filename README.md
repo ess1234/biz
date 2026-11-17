@@ -26,7 +26,7 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 ```
 app/        App(라우트 · 옛 주소 넘기기) · Shell(상단 바 · 메뉴 · 한도 알림 · 사람 메뉴)
 features/   auth(Login · RequireAuth) · home(Home · Welcome) · images(Images · ImageDetail) · integrations · billing · settings · admin
-ui/         여러 화면이 같이 쓰는 조각 — common(PageHead · Empty · Tabs · 아이콘) · InvoiceSheet
+ui/         여러 화면이 같이 쓰는 조각 — common(PageHead · Empty · Tabs · Loading · 아이콘) · confirm(askConfirm — window.confirm 대신) · InvoiceSheet
 data/       types(응답 타입) · keys(쿼리 키 qk) · hooks(useSettings · useUsage · useSiteKeys · useRecent · useAsset) · assets(공개 범위 · 설명 상태 문구) · usage(지표 문구) · invoices(청구서 상태)
 lib/        api · session · supabase · env · urls(영구 주소) · thumbs · upload · toast · format · clipboard · errors
 ```

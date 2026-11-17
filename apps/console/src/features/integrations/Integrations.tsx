@@ -16,6 +16,7 @@ import { canManage, useSession } from '../../lib/session';
 import { toast } from '../../lib/toast';
 import { imageOrigin, permanentUrl } from '../../lib/urls';
 import { PageHead, Tabs } from '../../ui/common';
+import { askConfirm } from '../../ui/confirm';
 
 const SCRIPT_FILE = String(import.meta.env.VITE_PAGE_SCRIPT || 'imagemeta-0.1.0.min.js');   // 제품명 미정 — 자리표시자 파일명
 const TABS = [['site', '사이트 키'], ['build', '빌드 연동'], ['api', 'API 키']] as const;
@@ -118,7 +119,7 @@ function SiteKeysTab() {
             {/* 데모는 콘솔 주소로 연다(vercel.json /d/:key → dos) — dos 가 이 출처의 /d/{키} 페이지 요청만 허용 출처 예외로 통과시킨다 */}
             <a className="bc-btn small" href={`${location.origin}/d/${k.key}`} target="_blank" rel="noreferrer">데모 보기</a>
             {canEdit && <button className="bc-btn small" onClick={() => setEditing(editing === k ? null : k)}>수정</button>}
-            {canEdit && <button className="bc-btn small danger" onClick={() => confirm('이 키를 폐기할까요? 이 키로 설명을 받던 페이지는 alt 가 비게 돼요.') && revoke.mutate(k.id)}>폐기</button>}
+            {canEdit && <button className="bc-btn small danger" onClick={async () => { if (await askConfirm('이 키를 폐기할까요? 이 키로 설명을 받던 페이지는 alt 가 비게 돼요.', { ok: '폐기', danger: true })) revoke.mutate(k.id); }}>폐기</button>}
           </div>
           {editing === k ? <KeyForm initial={k} onDone={() => setEditing(null)} /> : <Snippet k={k} />}
         </div>
@@ -220,7 +221,7 @@ function ApiKeysTab() {
               <td>{k.scopes.map((s) => SCOPES.find((x) => x.id === s)?.label ?? s).join(', ')}</td>
               <td>{fmtDateTime(k.last_used_at)}</td>
               <td>{fmtDate(k.created_at)}</td>
-              <td>{k.revoked_at ? <span className="bc-muted">폐기됨</span> : canEdit && <button className="bc-btn small danger" onClick={() => confirm('이 키를 폐기할까요? 그 키를 쓰는 서버 · 빌드가 바로 실패해요.') && revoke.mutate(k.id)}>폐기</button>}</td>
+              <td>{k.revoked_at ? <span className="bc-muted">폐기됨</span> : canEdit && <button className="bc-btn small danger" onClick={async () => { if (await askConfirm('이 키를 폐기할까요? 그 키를 쓰는 서버 · 빌드가 바로 실패해요.', { ok: '폐기', danger: true })) revoke.mutate(k.id); }}>폐기</button>}</td>
             </tr>
           ))}</tbody>
         </table>

@@ -11,8 +11,10 @@ import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type Adm
 import { api } from '../../lib/api';
 import { fmtDate, fmtDateTime, fmtMB, krw } from '../../lib/format';
 import { useSession } from '../../lib/session';
+import { toast } from '../../lib/toast';
 import { InvoiceSheet } from '../../ui/InvoiceSheet';
 import { PageHead } from '../../ui/common';
+import { askConfirm } from '../../ui/confirm';
 
 const STATUS_LABEL: Record<string, string> = { registered: '등록', uploaded: '업로드', backed_up: '보관', analyzed: '분석', failed: '실패', queued: '대기', running: '실행', done: '완료' };
 const VIS_LABEL: Record<string, string> = Object.fromEntries(Object.entries(VIS).map(([k, v]) => [k, v.label]));
@@ -107,7 +109,7 @@ function BizOps({ base }: { base: string }) {
   const dels = useQuery({ queryKey: qk.adminDeletions, queryFn: () => api.get<AdminDeletions>(`${base}/deletions`), staleTime: 30_000 });
   const backups = useQuery({ queryKey: [...qk.admin, 'backups'], queryFn: () => api.get<AdminBackups>(`${base}/backups`, { limit: 10 }), staleTime: 60_000 });
   const setStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${base}/invoices/${id}`, { status }), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminInvoices }) });
-  const generate = useMutation({ mutationFn: () => api.post<InvoiceGenerated>(`${base}/invoices:generate`, {}), onSuccess: (r) => { alert(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: qk.adminInvoices }); } });
+  const generate = useMutation({ mutationFn: () => api.post<InvoiceGenerated>(`${base}/invoices:generate`, {}), onSuccess: (r) => { toast(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: qk.adminInvoices }); } });
   const approve = useMutation({ mutationFn: (id: string) => api.post(`${base}/accounts/${id}/approve-delete`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminDeletions }) });
   const tot = inv.data?.totals;
   return (
@@ -117,7 +119,7 @@ function BizOps({ base }: { base: string }) {
         <div className="bc-row">
           <input className="bc-input w-110" placeholder="YYYY-MM" value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="기간" />
           <button className="bc-btn small" onClick={() => setPeriod(inv.data?.previous_period ?? '')}>전월</button>
-          <button className="bc-btn small" disabled={generate.isPending} onClick={() => { if (confirm('전월 청구서를 지금 만들까요? (이미 있는 워크스페이스는 건너뜀)')) generate.mutate(); }}>전월 청구서 만들기</button>
+          <button className="bc-btn small" disabled={generate.isPending} onClick={async () => { if (await askConfirm('전월 청구서를 지금 만들까요? (이미 있는 워크스페이스는 건너뜀)', { ok: '만들기' })) generate.mutate(); }}>전월 청구서 만들기</button>
           {tot && <span className="bc-muted">{tot.count}건 · 합계 {krw(tot.total_krw)} · 미수 {krw(tot.unpaid_krw)}</span>}
         </div>
         {inv.data && inv.data.items.length > 0 && (
@@ -129,7 +131,7 @@ function BizOps({ base }: { base: string }) {
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="bc-btn small" onClick={() => setOpen(i)}>보기</button>{' '}
                   {i.status === 'issued' && <button className="bc-btn small primary" disabled={setStatus.isPending} onClick={() => setStatus.mutate({ id: i.id, status: 'paid' })}>결제 확인</button>}{' '}
-                  {i.status === 'issued' && <button className="bc-btn small" onClick={() => { if (confirm('이 청구서를 취소할까요?')) setStatus.mutate({ id: i.id, status: 'void' }); }}>취소</button>}
+                  {i.status === 'issued' && <button className="bc-btn small" onClick={async () => { if (await askConfirm('이 청구서를 취소할까요?', { ok: '청구서 취소', danger: true })) setStatus.mutate({ id: i.id, status: 'void' }); }}>취소</button>}
                   {i.status !== 'issued' && <button className="bc-btn small" onClick={() => setStatus.mutate({ id: i.id, status: 'issued' })}>발행으로</button>}
                 </td></tr>
             ))}</tbody>
@@ -148,7 +150,7 @@ function BizOps({ base }: { base: string }) {
             <tbody>{dels.data.items.map((d) => (
               <tr key={d.account_id}><td><Link to={`/admin/acc/${d.account_id}`}>{d.name ?? d.account_id.slice(0, 8)}</Link></td><td>{fmtDateTime(d.delete_requested_at)}</td>
                 <td>{d.delete_approved_at ? fmtDateTime(d.delete_approved_at) : <span className="bc-badge warn">대기</span>}</td><td>{fmtDateTime(d.delete_at)}</td>
-                <td>{!d.delete_approved_at && <button className="bc-btn small danger" disabled={approve.isPending} onClick={() => { if (confirm(`${d.name} 의 삭제를 승인할까요? 유예가 끝나면 원본 · 사본 · DB 가 지워져요.`)) approve.mutate(d.account_id); }}>승인</button>}</td></tr>
+                <td>{!d.delete_approved_at && <button className="bc-btn small danger" disabled={approve.isPending} onClick={async () => { if (await askConfirm(`${d.name} 의 삭제를 승인할까요? 유예가 끝나면 원본 · 사본 · DB 가 지워져요.`, { ok: '삭제 승인', danger: true })) approve.mutate(d.account_id); }}>승인</button>}</td></tr>
             ))}</tbody>
           </table>
         )}
