@@ -1,6 +1,6 @@
 /// 로그인 · 가입 (메일 링크 또는 비밀번호) · 메일 링크 돌아오는 곳(/auth/callback)
 import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { BRAND, configured } from '../../lib/env';
 import { errorText } from '../../lib/errors';
@@ -58,11 +58,32 @@ export function LoginPage() {
   );
 }
 
+// 메일 링크가 실패하면 Supabase 가 #error=…&error_code=…&error_description=… 를 붙여 돌려보낸다.
+// supabase-js 가 주소의 # 를 읽고 지우기 전에, 페이지를 처음 불러올 때 값을 잡아 둔다.
+const LANDING = new URLSearchParams(location.hash.replace(/^#/, '') || location.search);
+const LINK_ERROR: Record<string, string> = {
+  otp_expired: '링크가 만료됐거나 이미 쓰였어요. 메일 링크는 한 번만 열 수 있어요 — 회사 메일의 보안 검사가 먼저 열어 본 경우에도 이렇게 돼요.',
+  access_denied: '로그인 링크가 거절됐어요.',
+};
+
 export function AuthCallbackPage() {
   const { session, loading } = useSession();
   const loc = useLocation();
   const next = new URLSearchParams(loc.search).get('next') || '/';
+  const code = LANDING.get('error_code') || LANDING.get('error');
   if (!loading && session) return <Navigate to={next} replace />;
+  if (!loading && code) {
+    return (
+      <div className="bc-center">
+        <div className="bc-card">
+          <h2>로그인 링크로 들어오지 못했어요</h2>
+          <p>{LINK_ERROR[code] ?? LANDING.get('error_description') ?? code}</p>
+          <p className="bc-muted">오류 코드: {code}</p>
+          <div className="bc-row"><Link className="bc-btn primary" to={`/login?next=${encodeURIComponent(next)}`}>새 링크 받기</Link></div>
+        </div>
+      </div>
+    );
+  }
   if (!loading && !session) return <Navigate to="/login" replace />;
   return <div className="bc-center"><div className="bc-spinner" /></div>;
 }
