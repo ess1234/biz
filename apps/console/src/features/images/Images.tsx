@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { VIS, VIS_ORDER, descState } from '../../data/assets';
 import { useSettings } from '../../data/hooks';
+import { qk } from '../../data/keys';
 import { type AssetSummary, type Page } from '../../data/types';
 import { api } from '../../lib/api';
 import { toastError } from '../../lib/errors';
@@ -64,7 +65,7 @@ export function ImagesPage() {
   };
 
   const list = useInfiniteQuery({
-    queryKey: ['assets', 'biz-list', filter],
+    queryKey: qk.assetList(filter),
     queryFn: ({ pageParam }) => api.get<Page<AssetSummary>>('/assets', {
       limit: PAGE, cursor: pageParam as string | undefined, sort: 'uploaded',
       trash: filter === 'trash' ? true : undefined, visibility: filter !== 'all' && filter !== 'trash' ? filter : undefined,
@@ -75,7 +76,7 @@ export function ImagesPage() {
     staleTime: 30_000,
   });
   const search = useQuery({
-    queryKey: ['assets', 'biz-search', q],
+    queryKey: qk.search(q),
     queryFn: () => api.get<{ items: AssetSummary[]; total: number }>('/search', { q, limit: 200 }),
     enabled: Boolean(q),
   });
@@ -89,7 +90,7 @@ export function ImagesPage() {
   const loading = q ? search.isLoading : list.isLoading;
   const ids = rows.map((a) => a.id);
 
-  const refresh = () => { qc.invalidateQueries({ queryKey: ['assets'] }); setSelected(new Set()); };
+  const refresh = () => { qc.invalidateQueries({ queryKey: qk.assets }); setSelected(new Set()); };
   const vis = useMutation({
     mutationFn: (v: string) => api.post<{ items: { id: string; ok: boolean; error?: { message: string } }[] }>('/assets:batch-visibility', { ids: [...selected], visibility: v }),
     onSuccess: (r, v) => { const bad = r.items.filter((x) => !x.ok).length; toast(bad ? `${r.items.length - bad}장 바꿈 · ${bad}장 실패` : `${r.items.length}장을 ${VIS[v]?.label} 로 바꿨어요`); refresh(); },

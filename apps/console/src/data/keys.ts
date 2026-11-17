@@ -1,0 +1,21 @@
+/// TanStack Query 키 — 무효화(invalidate)가 어긋나지 않게 한 곳에서. 앞부분이 같으면 함께 무효화된다(['assets'] 는 ['assets', 필터] 도).
+export const qk = {
+  settings: ['settings'] as const,
+  usage: ['usage'] as const,
+  usageMonth: ['usage', 'this-month'] as const,
+  usageRange: (from: string, to: string) => ['usage', from, to] as const,
+  plan: ['plan'] as const,
+  invoices: ['invoices'] as const,
+  exports: ['exports'] as const,
+  siteKeys: ['site-keys'] as const,
+  apiKeys: (accountId: string) => ['api-keys', accountId] as const,
+  assets: ['assets'] as const,
+  recent: (limit: number) => ['assets', 'recent', limit] as const,
+  assetList: (filter: string) => ['assets', 'list', filter] as const,
+  search: (q: string) => ['assets', 'search', q] as const,
+  asset: (id: string | undefined) => ['asset', id] as const,
+  admin: ['admin'] as const,
+  adminInvoices: ['admin', 'invoices'] as const,
+  adminDeletions: ['admin', 'deletions'] as const,
+  adminAccount: (id: string) => ['admin', 'account', id] as const,
+};

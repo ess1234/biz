@@ -1,4 +1,4 @@
-/// 운영 (운영자만, 메뉴 맨 아래 — biz-dev-08 3절). sai 콘솔 Admin.tsx 의 B2B 부분을 옮김: 현황 · 사용량 상위 · 청구서 · 삭제 승인 · 백업 · 계정.
+/// 운영 (운영자만, 메뉴 맨 아래 — biz-dev-08 3절): 현황 · 사용량 상위 · 청구서 · 삭제 승인 · 백업 · 계정.
 /// 데이터만 — 이미지 · 주소는 보여 주지 않는다. 경로는 GET /me 의 admin.path 로만 안다(무작위 슬러그). 이 화면을 연 기록은 서버가 남긴다.
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,6 +6,8 @@ import { Link, useParams } from 'react-router-dom';
 
 import { VIS } from '../../data/assets';
 import { INVOICE_STATUS } from '../../data/invoices';
+import { qk } from '../../data/keys';
+import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
 import { api } from '../../lib/api';
 import { fmtDate, fmtDateTime, fmtMB, krw } from '../../lib/format';
 import { useSession } from '../../lib/session';
@@ -27,10 +29,10 @@ function Stat({ label, v }: { label: string; v: string }) {
 
 export function AdminPage() {
   const base = useAdminPath();
-  const summary = useQuery({ queryKey: ['admin', 'summary'], queryFn: () => api.get<any>(`${base}/summary`), enabled: Boolean(base), staleTime: 30_000 });
-  const accounts = useQuery({ queryKey: ['admin', 'accounts'], queryFn: () => api.get<{ items: any[] }>(`${base}/accounts`), enabled: Boolean(base), staleTime: 30_000 });
-  const jobs = useQuery({ queryKey: ['admin', 'jobs'], queryFn: () => api.get<any>(`${base}/jobs`), enabled: Boolean(base), staleTime: 30_000 });
-  const usageTop = useQuery({ queryKey: ['admin', 'usage-top'], queryFn: () => api.get<any>(`${base}/usage-top`, { days: 7 }), enabled: Boolean(base), staleTime: 60_000 });
+  const summary = useQuery({ queryKey: [...qk.admin, 'summary'], queryFn: () => api.get<AdminSummary>(`${base}/summary`), enabled: Boolean(base), staleTime: 30_000 });
+  const accounts = useQuery({ queryKey: [...qk.admin, 'accounts'], queryFn: () => api.get<{ items: AdminAccount[] }>(`${base}/accounts`), enabled: Boolean(base), staleTime: 30_000 });
+  const jobs = useQuery({ queryKey: [...qk.admin, 'jobs'], queryFn: () => api.get<AdminJobs>(`${base}/jobs`), enabled: Boolean(base), staleTime: 30_000 });
+  const usageTop = useQuery({ queryKey: [...qk.admin, 'usage-top'], queryFn: () => api.get<AdminUsageTop>(`${base}/usage-top`, { days: 7 }), enabled: Boolean(base), staleTime: 60_000 });
   if (!base) return <p className="bc-muted">운영자만 볼 수 있어요.</p>;
   const s = summary.data;
   const u = usageTop.data;
@@ -52,7 +54,7 @@ export function AdminPage() {
           <table className="bc-table" style={{ marginTop: 8 }}>
             <thead><tr><th>워크스페이스</th><th>이미지 요청</th><th>전송</th><th>변환</th><th>메타 요청</th><th>업로드</th><th>분석</th><th>저장</th></tr></thead>
             <tbody>
-              {u.items.map((x: any) => (
+              {u.items.map((x) => (
                 <tr key={x.account_id}><td><Link to={`/admin/acc/${x.account_id}`}>{x.name}</Link></td><td>{x.image_requests.toLocaleString()}</td><td>{fmtMB(x.egress_bytes)}</td><td>{x.transforms.toLocaleString()}</td><td>{x.meta_requests.toLocaleString()}</td><td>{x.uploads.toLocaleString()}</td><td>{x.analyses.toLocaleString()}</td><td>{fmtMB(x.storage_bytes)}</td></tr>
               ))}
               {u.totals && <tr style={{ fontWeight: 700 }}><td>합계</td><td>{u.totals.image_requests.toLocaleString()}</td><td>{fmtMB(u.totals.egress_bytes)}</td><td>{u.totals.transforms.toLocaleString()}</td><td>{u.totals.meta_requests.toLocaleString()}</td><td>{u.totals.uploads.toLocaleString()}</td><td>{u.totals.analyses.toLocaleString()}</td><td>{fmtMB(u.totals.storage_bytes)}</td></tr>}
@@ -71,7 +73,7 @@ export function AdminPage() {
             <tbody>{accounts.data?.items.map((a) => (
               <tr key={a.id}>
                 <td><Link to={`/admin/acc/${a.id}`}>{a.name}</Link><div className="bc-muted">{fmtDate(a.created_at)} 가입</div></td>
-                <td>{(a.members ?? []).map((m: any) => <div key={m.email ?? m.user_id}>{m.email ?? '—'} <span className="bc-muted">{fmtDateTime(m.last_sign_in_at)}</span></div>)}</td>
+                <td>{(a.members ?? []).map((m, j) => <div key={m.email ?? j}>{m.email ?? '—'} <span className="bc-muted">{fmtDateTime(m.last_sign_in_at)}</span></div>)}</td>
                 <td>{a.assets?.total ?? 0}<div className="bc-muted">휴지통 {a.assets?.trash ?? 0} · {fmtMB(a.assets?.bytes)}</div></td>
                 <td>{counts(a.assets?.by_status, STATUS_LABEL)}</td>
                 <td>{counts(a.assets?.by_visibility, VIS_LABEL)}</td>
@@ -87,7 +89,7 @@ export function AdminPage() {
         {jobs.data && (
           <>
             <p>{counts(jobs.data.by_status, STATUS_LABEL)} (최근 {jobs.data.sample}건 기준){jobs.data.oldest_queued_at && <span className="bc-muted"> · 가장 오래된 대기 {fmtDateTime(jobs.data.oldest_queued_at)}</span>}</p>
-            {jobs.data.recent_failed?.length > 0 && <ul className="bc-plain">{jobs.data.recent_failed.map((f: any, i: number) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)} · 시도 {f.attempts}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
+            {jobs.data.recent_failed.length > 0 && <ul className="bc-plain">{jobs.data.recent_failed.map((f, i) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)} · 시도 {f.attempts}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
           </>
         )}
       </section>
@@ -99,13 +101,13 @@ export function AdminPage() {
 function BizOps({ base }: { base: string }) {
   const qc = useQueryClient();
   const [period, setPeriod] = useState('');
-  const [open, setOpen] = useState<any | null>(null);
-  const inv = useQuery({ queryKey: ['admin', 'invoices', period], queryFn: () => api.get<any>(`${base}/invoices`, period ? { period } : {}), staleTime: 30_000 });
-  const dels = useQuery({ queryKey: ['admin', 'deletions'], queryFn: () => api.get<any>(`${base}/deletions`), staleTime: 30_000 });
-  const backups = useQuery({ queryKey: ['admin', 'backups'], queryFn: () => api.get<any>(`${base}/backups`, { limit: 10 }), staleTime: 60_000 });
-  const setStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${base}/invoices/${id}`, { status }), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'invoices'] }) });
-  const generate = useMutation({ mutationFn: () => api.post<any>(`${base}/invoices:generate`, {}), onSuccess: (r) => { alert(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: ['admin', 'invoices'] }); } });
-  const approve = useMutation({ mutationFn: (id: string) => api.post(`${base}/accounts/${id}/approve-delete`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'deletions'] }) });
+  const [open, setOpen] = useState<AdminInvoice | null>(null);
+  const inv = useQuery({ queryKey: [...qk.adminInvoices, period], queryFn: () => api.get<AdminInvoices>(`${base}/invoices`, period ? { period } : {}), staleTime: 30_000 });
+  const dels = useQuery({ queryKey: qk.adminDeletions, queryFn: () => api.get<AdminDeletions>(`${base}/deletions`), staleTime: 30_000 });
+  const backups = useQuery({ queryKey: [...qk.admin, 'backups'], queryFn: () => api.get<AdminBackups>(`${base}/backups`, { limit: 10 }), staleTime: 60_000 });
+  const setStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${base}/invoices/${id}`, { status }), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminInvoices }) });
+  const generate = useMutation({ mutationFn: () => api.post<InvoiceGenerated>(`${base}/invoices:generate`, {}), onSuccess: (r) => { alert(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: qk.adminInvoices }); } });
+  const approve = useMutation({ mutationFn: (id: string) => api.post(`${base}/accounts/${id}/approve-delete`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminDeletions }) });
   const tot = inv.data?.totals;
   return (
     <>
@@ -120,9 +122,9 @@ function BizOps({ base }: { base: string }) {
         {inv.data && inv.data.items.length > 0 && (
           <table className="bc-table" style={{ marginTop: 8 }}>
             <thead><tr><th>기간</th><th>워크스페이스</th><th>플랜</th><th>저장</th><th>전송</th><th style={{ textAlign: 'right' }}>합계</th><th>상태</th><th /></tr></thead>
-            <tbody>{inv.data.items.map((i: any) => (
+            <tbody>{inv.data.items.map((i) => (
               <tr key={i.id}><td>{i.period}</td><td><Link to={`/admin/acc/${i.account.id}`}>{i.account.name}</Link></td><td>{i.plan}</td><td>{i.usage?.storage_gb} GB</td><td>{i.usage?.egress_gb} GB</td><td style={{ textAlign: 'right' }}>{krw(i.total_krw)}</td>
-                <td><span className={`bc-badge${i.status === 'paid' ? '' : i.status === 'issued' ? ' warn' : ' gray'}`}>{INVOICE_STATUS[i.status as keyof typeof INVOICE_STATUS]}</span></td>
+                <td><span className={`bc-badge${i.status === 'paid' ? '' : i.status === 'issued' ? ' warn' : ' gray'}`}>{INVOICE_STATUS[i.status]}</span></td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="bc-btn small" onClick={() => setOpen(i)}>보기</button>{' '}
                   {i.status === 'issued' && <button className="bc-btn small primary" disabled={setStatus.isPending} onClick={() => setStatus.mutate({ id: i.id, status: 'paid' })}>결제 확인</button>}{' '}
@@ -142,7 +144,7 @@ function BizOps({ base }: { base: string }) {
         {dels.data && dels.data.items.length > 0 && (
           <table className="bc-table" style={{ marginTop: 8 }}>
             <thead><tr><th>워크스페이스</th><th>요청</th><th>승인</th><th>실행 예정</th><th /></tr></thead>
-            <tbody>{dels.data.items.map((d: any) => (
+            <tbody>{dels.data.items.map((d) => (
               <tr key={d.account_id}><td><Link to={`/admin/acc/${d.account_id}`}>{d.name ?? d.account_id.slice(0, 8)}</Link></td><td>{fmtDateTime(d.delete_requested_at)}</td>
                 <td>{d.delete_approved_at ? fmtDateTime(d.delete_approved_at) : <span className="bc-badge warn">대기</span>}</td><td>{fmtDateTime(d.delete_at)}</td>
                 <td>{!d.delete_approved_at && <button className="bc-btn small danger" disabled={approve.isPending} onClick={() => { if (confirm(`${d.name} 의 삭제를 승인할까요? 유예가 끝나면 원본 · 사본 · DB 가 지워져요.`)) approve.mutate(d.account_id); }}>승인</button>}</td></tr>
@@ -156,10 +158,10 @@ function BizOps({ base }: { base: string }) {
         {backups.data && (
           <>
             <p>{['db_json', 'originals', 'drill'].map((k) => <span key={k} className={`bc-badge${backups.data.last_ok?.[k] ? '' : ' gray'}`} style={{ marginRight: 6 }}>{k} {backups.data.last_ok?.[k] ? fmtDateTime(backups.data.last_ok[k]) : '기록 없음'}</span>)}</p>
-            {backups.data.items?.length > 0 && (
+            {backups.data.items.length > 0 && (
               <table className="bc-table" style={{ fontSize: 12 }}>
                 <thead><tr><th>시작</th><th>종류</th><th>대상</th><th>결과</th><th>객체</th><th>바이트</th><th>메모</th></tr></thead>
-                <tbody>{backups.data.items.map((b: any) => <tr key={b.id}><td>{fmtDateTime(b.started_at)}</td><td>{b.kind}</td><td className="bc-mono">{b.dest}</td><td>{b.ok ? 'OK' : '실패'}</td><td>{b.objects}</td><td>{fmtMB(b.bytes ?? 0)}</td><td>{b.note}</td></tr>)}</tbody>
+                <tbody>{backups.data.items.map((b) => <tr key={b.id}><td>{fmtDateTime(b.started_at)}</td><td>{b.kind}</td><td className="bc-mono">{b.dest}</td><td>{b.ok ? 'OK' : '실패'}</td><td>{b.objects}</td><td>{fmtMB(b.bytes ?? 0)}</td><td>{b.note}</td></tr>)}</tbody>
               </table>
             )}
           </>
@@ -172,7 +174,7 @@ function BizOps({ base }: { base: string }) {
 export function AdminAccountPage() {
   const base = useAdminPath();
   const { id = '' } = useParams();
-  const q = useQuery({ queryKey: ['admin', 'account', id], queryFn: () => api.get<any>(`${base}/accounts/${id}`, { recent: 50 }), enabled: Boolean(base && id) });
+  const q = useQuery({ queryKey: qk.adminAccount(id), queryFn: () => api.get<AdminAccountDetail>(`${base}/accounts/${id}`, { recent: 50 }), enabled: Boolean(base && id) });
   if (!base) return <p className="bc-muted">운영자만 볼 수 있어요.</p>;
   if (q.isLoading) return <p className="bc-muted">불러오는 중…</p>;
   if (!q.data) return <p className="bc-msg">워크스페이스가 없어요.</p>;
@@ -182,14 +184,14 @@ export function AdminAccountPage() {
       <div className="bc-row" style={{ marginTop: 0 }}><Link className="bc-btn small" to="/admin">← 운영</Link></div>
       <h2 className="bc-h bc-sec">{d.account.name}</h2>
       <p className="bc-muted">가입 {fmtDateTime(d.account.created_at)} · 분석 작업(최근 50) {counts(d.jobs?.by_status, STATUS_LABEL)}</p>
-      {d.jobs?.recent_failed?.length > 0 && <ul className="bc-plain">{d.jobs.recent_failed.map((f: any, i: number) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
+      {d.jobs.recent_failed.length > 0 && <ul className="bc-plain">{d.jobs.recent_failed.map((f, i) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
       <h3 className="bc-sec" style={{ fontSize: 15 }}>최근 이미지 {d.recent_assets?.length ?? 0}건 <span className="bc-badge gray">글만</span></h3>
       <table className="bc-table" style={{ marginTop: 8 }}>
         <thead><tr><th>올림</th><th>상태</th><th>공개 범위</th><th>크기</th><th>설명</th><th>키워드</th><th>출처</th></tr></thead>
-        <tbody>{(d.recent_assets ?? []).map((a: any) => (
+        <tbody>{(d.recent_assets ?? []).map((a) => (
           <tr key={a.id} style={a.deleted ? { opacity: .5 } : undefined}>
             <td>{fmtDateTime(a.created_at)}</td>
-            <td>{STATUS_LABEL[a.status] ?? a.status}{a.deleted ? ' · 휴지통' : ''}</td><td>{VIS_LABEL[a.visibility] ?? a.visibility}</td>
+            <td>{STATUS_LABEL[a.status] ?? a.status}{a.deleted ? ' · 휴지통' : ''}</td><td>{VIS_LABEL[a.visibility ?? 'private'] ?? a.visibility}</td>
             <td>{a.size ?? '—'}<div className="bc-muted">{a.bytes ? fmtMB(a.bytes) : ''}</div></td>
             <td style={{ maxWidth: 360 }}>{a.caption ?? <span className="bc-muted">(설명 없음)</span>}</td>
             <td className="bc-muted">{(a.keywords ?? []).join(' · ')}</td>

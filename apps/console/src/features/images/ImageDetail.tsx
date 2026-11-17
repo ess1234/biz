@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { VIS, VIS_ORDER } from '../../data/assets';
 import { invalidateAsset, useAsset } from '../../data/hooks';
+import { qk } from '../../data/keys';
 import { type Asset } from '../../data/types';
 import { ApiError, api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
@@ -80,7 +81,7 @@ function usePatch(a: Asset) {
     mutationFn: (body: Record<string, unknown>) => api.patch<Asset>(`/assets/${a.id}`, { base_version: a.manual_version ?? 0, ...body }),
     onSuccess: () => { invalidateAsset(qc, a.id); },
     onError: (e: any) => {
-      if (e instanceof ApiError && e.code === 'CONFLICT_STALE') { toast('다른 곳에서 먼저 바뀌었어요 — 최신 내용을 불러왔어요. 다시 고쳐 주세요'); qc.invalidateQueries({ queryKey: ['asset', a.id] }); }
+      if (e instanceof ApiError && e.code === 'CONFLICT_STALE') { toast('다른 곳에서 먼저 바뀌었어요 — 최신 내용을 불러왔어요. 다시 고쳐 주세요'); qc.invalidateQueries({ queryKey: qk.asset(a.id) }); }
       else toast(`저장하지 못했어요: ${e.message}`);
     },
   });
@@ -88,7 +89,7 @@ function usePatch(a: Asset) {
 
 function Description({ a }: { a: Asset }) {
   const caps: Record<string, string> = a.chosen?.caption ?? {};
-  const sources = useMemo(() => ((a as any).analyses as { source: string }[] | undefined)?.map((x) => x.source) ?? [], [a]);
+  const sources = useMemo(() => a.analyses?.map((x) => x.source) ?? [], [a]);
   const [lang, setLang] = useState(() => (caps.ko ? 'ko' : Object.keys(caps)[0] || 'ko'));
   const [draft, setDraft] = useState(caps[lang] ?? '');
   useEffect(() => { setDraft(caps[lang] ?? ''); }, [a.id, lang, a.manual_version, a.analysis_version]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { qk } from '../data/keys';
 import { api, webDeviceId } from './api';
 
 export type UploadItem = { key: number; file: File; status: 'wait' | 'hash' | 'register' | 'upload' | 'complete' | 'done' | 'dup' | 'error'; assetId?: string; error?: string; progress?: number };
@@ -101,7 +102,7 @@ export function useUploader() {
           }
         } catch (e: any) { toUpload.filter((t) => completed.includes(t.assetId)).forEach(({ key }) => update(key, { status: 'error', error: `마무리: ${e.message}` })); }
       }
-      qc.invalidateQueries({ queryKey: ['assets'] });
+      qc.invalidateQueries({ queryKey: qk.assets });
     } finally { setRunning(false); }
   }
 

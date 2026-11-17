@@ -27,12 +27,12 @@ B2B(이미지 클라우드) 프런트 저장소. 서버는 `dos`(`T23_PRODUCT=bi
 app/        App(라우트 · 옛 주소 넘기기) · Shell(상단 바 · 메뉴 · 한도 알림 · 사람 메뉴)
 features/   auth(Login · RequireAuth) · home(Home · Welcome) · images(Images · ImageDetail) · integrations · billing · settings · admin
 ui/         여러 화면이 같이 쓰는 조각 — common(PageHead · Empty · Tabs · 아이콘) · InvoiceSheet
-data/       types(응답 타입) · hooks(useSettings · useUsage · useSiteKeys · useRecent · useAsset) · assets(공개 범위 · 설명 상태 문구) · usage(지표 문구) · invoices(청구서 상태)
+data/       types(응답 타입) · keys(쿼리 키 qk) · hooks(useSettings · useUsage · useSiteKeys · useRecent · useAsset) · assets(공개 범위 · 설명 상태 문구) · usage(지표 문구) · invoices(청구서 상태)
 lib/        api · session · supabase · env · urls(영구 주소) · thumbs · upload · toast · format · clipboard · errors
 ```
 
 규칙: 아래 층은 위 층을 import 하지 않는다(lib → data → ui → features → app). `data/types` 는 의존이 없는 잎이라 lib 도 쓴다.
-화면끼리(features 사이) import 는 같은 폴더 안에서만 — 둘 이상이 쓰면 `ui/` 나 `data/` 로 올린다. 응답 타입은 `data/types` 에만 둔다.
+화면끼리(features 사이) import 는 같은 폴더 안에서만 — 둘 이상이 쓰면 `ui/` 나 `data/` 로 올린다. 응답 타입은 `data/types`, 쿼리 키는 `qk` 로만. 여러 화면이 쓰는 조회는 `data/hooks`, 한 화면만 쓰는 조회 · 변경은 그 화면에.
 - 배포(Vercel, 모노레포): 프로젝트 Root Directory = `apps/console`, 저장소 루트(`biz/`)에서 `npx vercel deploy`. `npm run build` 의 prebuild 가 `../../packages/pagescript` 를 빌드한다.
 
 - 패키지 이름 `imagemeta` 는 자리표시자 — 제품명이 정해지면 한 곳에서 바꾼다. 코드에 호스트를 박지 않는다(`apiBase` 는 필수 인자).

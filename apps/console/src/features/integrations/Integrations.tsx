@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { useSiteKeys } from '../../data/hooks';
+import { qk } from '../../data/keys';
 import { type ApiKey, type SiteKey } from '../../data/types';
 import { ApiError, api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
@@ -16,7 +17,6 @@ import { toast } from '../../lib/toast';
 import { imageOrigin, permanentUrl } from '../../lib/urls';
 import { PageHead, Tabs } from '../../ui/common';
 
-type FullSiteKey = SiteKey & { allowed_variants: string[] };
 const SCRIPT_FILE = String(import.meta.env.VITE_PAGE_SCRIPT || 'imagemeta-0.1.0.min.js');   // 제품명 미정 — 자리표시자 파일명
 const TABS = [['site', '사이트 키'], ['build', '빌드 연동'], ['api', 'API 키']] as const;
 
@@ -44,7 +44,7 @@ export function IntegrationsPage() {
 
 /* ───────────── 사이트 키 + 스크립트 한 줄 ───────────── */
 
-function Snippet({ k }: { k: FullSiteKey }) {
+function Snippet({ k }: { k: SiteKey }) {
   const code = `<script src="${location.origin}/js/${SCRIPT_FILE}" data-key="${k.key}" data-lang="ko" data-api="${apiOrigin()}/t23/v1" defer></script>`;
   const img = `<img src="${permanentUrl('{이미지 id}')}" loading="lazy">`;
   return (
@@ -55,7 +55,7 @@ function Snippet({ k }: { k: FullSiteKey }) {
   );
 }
 
-function KeyForm({ initial, onDone }: { initial?: FullSiteKey; onDone: () => void }) {
+function KeyForm({ initial, onDone }: { initial?: SiteKey; onDone: () => void }) {
   const qc = useQueryClient();
   const [label, setLabel] = useState(initial?.label ?? '');
   const [origins, setOrigins] = useState((initial?.allowed_origins ?? []).join('\n'));
@@ -63,9 +63,9 @@ function KeyForm({ initial, onDone }: { initial?: FullSiteKey; onDone: () => voi
   const save = useMutation({
     mutationFn: () => {
       const body = { label: label.trim() || null, allowed_origins: origins.split(/[\n,\s]+/).map((s) => s.trim()).filter(Boolean), allowed_variants: variants.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) };
-      return initial ? api.patch<FullSiteKey>(`/site-keys/${initial.id}`, body) : api.post<FullSiteKey>('/site-keys', body);
+      return initial ? api.patch<SiteKey>(`/site-keys/${initial.id}`, body) : api.post<SiteKey>('/site-keys', body);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['site-keys'] }); toast(initial ? '저장했어요' : '사이트 키를 만들었어요'); onDone(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.siteKeys }); toast(initial ? '저장했어요' : '사이트 키를 만들었어요'); onDone(); },
     onError: (e: any) => toast(e instanceof ApiError && e.details && (e.details as any).bad ? `형식이 맞지 않아요: ${(e.details as any).bad.join(', ')}` : e.message),
   });
   return (
@@ -88,13 +88,13 @@ function SiteKeysTab() {
   const qc = useQueryClient();
   const { me } = useSession();
   const q = useSiteKeys();
-  const [editing, setEditing] = useState<FullSiteKey | 'new' | null>(null);
+  const [editing, setEditing] = useState<SiteKey | 'new' | null>(null);
   const revoke = useMutation({
     mutationFn: (id: string) => api.delete(`/site-keys/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['site-keys'] }); toast('폐기했어요 — 이미 받아 간 설명은 브라우저 캐시가 끝나는 10분 안에 사라져요'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.siteKeys }); toast('폐기했어요 — 이미 받아 간 설명은 브라우저 캐시가 끝나는 10분 안에 사라져요'); },
     onError: toastError,
   });
-  const items = (q.data?.items ?? []) as FullSiteKey[];
+  const items = q.data?.items ?? [];
   const active = items.filter((k) => !k.revoked_at);
   const revoked = items.filter((k) => k.revoked_at);
   const canEdit = canManage(me);
@@ -167,18 +167,18 @@ function ApiKeysTab() {
   const { me } = useSession();
   const accountId = me!.account.id;
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ['api-keys', accountId], queryFn: () => api.get<{ items: ApiKey[] }>(`/accounts/${accountId}/api-keys`) });
+  const q = useQuery({ queryKey: qk.apiKeys(accountId), queryFn: () => api.get<{ items: ApiKey[] }>(`/accounts/${accountId}/api-keys`) });
   const [label, setLabel] = useState('');
   const [scopes, setScopes] = useState<Set<string>>(new Set(['assets:read']));
   const [issued, setIssued] = useState<ApiKey | null>(null);
   const create = useMutation({
     mutationFn: () => api.post<ApiKey>(`/accounts/${accountId}/api-keys`, { label: label.trim() || null, scopes: [...scopes] }),
-    onSuccess: (k) => { setIssued(k); setLabel(''); qc.invalidateQueries({ queryKey: ['api-keys', accountId] }); },
+    onSuccess: (k) => { setIssued(k); setLabel(''); qc.invalidateQueries({ queryKey: qk.apiKeys(accountId) }); },
     onError: toastError,
   });
   const revoke = useMutation({
     mutationFn: (id: string) => api.delete(`/accounts/${accountId}/api-keys/${id}`),
-    onSuccess: () => { toast('폐기했어요 — 그 키의 요청은 바로 거절돼요'); qc.invalidateQueries({ queryKey: ['api-keys', accountId] }); },
+    onSuccess: () => { toast('폐기했어요 — 그 키의 요청은 바로 거절돼요'); qc.invalidateQueries({ queryKey: qk.apiKeys(accountId) }); },
     onError: toastError,
   });
   const canEdit = canManage(me);

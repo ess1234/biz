@@ -4,17 +4,15 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 
-import { type Invoice } from '../../data/types';
+import { INVOICE_STATUS } from '../../data/invoices';
+import { qk } from '../../data/keys';
+import { type Invoice, type PlanInfo, type UsageByDay } from '../../data/types';
 import { METRIC_LABEL, fmtMetric } from '../../data/usage';
 import { api } from '../../lib/api';
-import { INVOICE_STATUS } from '../../data/invoices';
 import { krw } from '../../lib/format';
 import { InvoiceSheet } from '../../ui/InvoiceSheet';
 import { PageHead, Tabs } from '../../ui/common';
 
-type UsageResp = { from: string; to: string; days: { day: string; metrics: Record<string, number> }[]; totals: Record<string, number>; plan: string; plan_label?: string | null; limits: Record<string, number | null>; overage_policy: string; warnings?: string[]; edge_note?: string };
-type Plan = { plan: string; label: string; overage_policy: string; limits: Record<string, number | null>; prices: { base_krw: number; storage_krw_per_gb: number; egress_krw_per_gb: number };
-  month: { from: string; to: string; totals: Record<string, number>; warnings: string[] }; billing_note: string };
 
 const METRICS = ['storage_bytes', 'egress_bytes', 'image_requests', 'meta_requests', 'transforms', 'uploads', 'analyses'];
 const TABS = [['usage', '사용량'], ['invoices', '청구서'], ['plan', '플랜']] as const;
@@ -58,7 +56,7 @@ function Meter({ metric, used, limit, warn }: { metric: string; used: number; li
 function UsageTab() {
   const [offset, setOffset] = useState(0);
   const range = useMemo(() => monthRange(offset), [offset]);
-  const q = useQuery({ queryKey: ['usage', range.from, range.to], queryFn: () => api.get<UsageResp>('/usage', { from: range.from, to: range.to }) });
+  const q = useQuery({ queryKey: qk.usageRange(range.from, range.to), queryFn: () => api.get<UsageByDay>('/usage', { from: range.from, to: range.to }) });
   const [pick, setPick] = useState('image_requests');
   const u = q.data;
   const max = Math.max(1, ...(u?.days ?? []).map((d) => d.metrics[pick] ?? 0));
@@ -91,7 +89,7 @@ function UsageTab() {
 }
 
 function PlanTab() {
-  const plan = useQuery({ queryKey: ['plan'], queryFn: () => api.get<Plan>('/plan') });
+  const plan = useQuery({ queryKey: qk.plan, queryFn: () => api.get<PlanInfo>('/plan') });
   const p = plan.data;
   if (plan.isLoading) return <p className="bc-muted">불러오는 중…</p>;
   if (!p) return <p className="bc-msg">플랜을 불러오지 못했어요.</p>;
@@ -115,7 +113,7 @@ function PlanTab() {
 }
 
 function InvoicesTab() {
-  const inv = useQuery({ queryKey: ['invoices'], queryFn: () => api.get<{ items: Invoice[] }>('/invoices') });
+  const inv = useQuery({ queryKey: qk.invoices, queryFn: () => api.get<{ items: Invoice[] }>('/invoices') });
   const [open, setOpen] = useState<Invoice | null>(null);
   return (
     <>

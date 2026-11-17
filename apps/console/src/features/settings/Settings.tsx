@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { useSettings } from '../../data/hooks';
+import { qk } from '../../data/keys';
+import { type ExportJob } from '../../data/types';
 import { ApiError, api } from '../../lib/api';
 import { toastError } from '../../lib/errors';
 import { fmtDate, fmtMB } from '../../lib/format';
@@ -12,7 +14,6 @@ import { canManage, useSession } from '../../lib/session';
 import { toast } from '../../lib/toast';
 import { PageHead } from '../../ui/common';
 
-type ExportJob = { id: string; status: string; url: string | null; bytes: number | null; expires_at: string | null; created_at: string; finished_at: string | null; error?: string | null };
 
 const STATUS: Record<string, string> = { queued: '대기', running: '만드는 중', done: '완료', failed: '실패', expired: '만료' };
 
@@ -33,14 +34,14 @@ export function SettingsPage() {
 
   const ai = useMutation({
     mutationFn: (on: boolean) => api.patch('/settings', { ai_consent: on }),
-    onSuccess: (_d, on) => { qc.invalidateQueries({ queryKey: ['settings'] }); toast(on ? 'AI 분석을 켰어요' : 'AI 분석을 껐어요 — 대기 중인 분석도 취소했어요'); },
+    onSuccess: (_d, on) => { qc.invalidateQueries({ queryKey: qk.settings }); toast(on ? 'AI 분석을 켰어요' : 'AI 분석을 껐어요 — 대기 중인 분석도 취소했어요'); },
     onError: toastError,
   });
 
-  const exports = useQuery({ queryKey: ['exports'], queryFn: () => api.get<{ items: ExportJob[] }>('/account/exports'), refetchInterval: (q) => (q.state.data?.items.some((x) => x.status === 'queued' || x.status === 'running') ? 5000 : false) });
+  const exports = useQuery({ queryKey: qk.exports, queryFn: () => api.get<{ items: ExportJob[] }>('/account/exports'), refetchInterval: (q) => (q.state.data?.items.some((x) => x.status === 'queued' || x.status === 'running') ? 5000 : false) });
   const startExport = useMutation({
     mutationFn: () => api.post('/account:export', {}),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['exports'] }); toast('내보내기를 요청했어요 — 준비되면 여기서 받을 수 있어요'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.exports }); toast('내보내기를 요청했어요 — 준비되면 여기서 받을 수 있어요'); },
     onError: (e: any) => toast(e instanceof ApiError && e.code === 'CONFLICT_DUP' ? '이미 진행 중인 내보내기가 있어요' : e.message),
   });
 

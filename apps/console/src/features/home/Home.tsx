@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { VIS } from '../../data/assets';
 import { useRecent, useSettings, useSiteKeys, useUsage } from '../../data/hooks';
+import { qk } from '../../data/keys';
 import { type AssetSummary } from '../../data/types';
 import { METRIC_LABEL, fmtMetric } from '../../data/usage';
 import { api } from '../../lib/api';
@@ -42,7 +43,7 @@ export function HomePage() {
   const [snippetDone, setSnippetDone] = useState(() => { try { return localStorage.getItem(SNIPPET_KEY(accId)) === '1'; } catch { return false; } });
   const consent = useMutation({
     mutationFn: () => api.patch('/settings', { ai_consent: true }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['settings'] }); toast('AI 분석을 켰어요'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.settings }); toast('AI 분석을 켰어요'); },
     onError: toastError,
   });
 
