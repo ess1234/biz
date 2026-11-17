@@ -88,6 +88,9 @@ function usePatch(a: Asset) {
   });
 }
 
+/// 설명 출처 배지 — 서버 병합 순서(manual > ai > local, dos analysis/merge.py)대로 처음 맞는 것. derived(장소 · 여행)는 설명이 없어서 뺀다
+const ORIGIN = [['manual', '직접 고침'], ['ai', 'AI 생성'], ['local', '기기 분석']] as const;
+
 function Description({ a }: { a: Asset }) {
   const caps: Record<string, string> = a.chosen?.caption ?? {};
   const sources = useMemo(() => a.analyses?.map((x) => x.source) ?? [], [a]);
@@ -96,10 +99,11 @@ function Description({ a }: { a: Asset }) {
   useEffect(() => { setDraft(caps[lang] ?? ''); }, [a.id, lang, a.manual_version, a.analysis_version]); // eslint-disable-line react-hooks/exhaustive-deps
   const patch = usePatch(a);
   const dirty = draft !== (caps[lang] ?? '');
-  const origin = sources.includes('manual') ? '직접 고침' : sources.includes('ai') ? 'AI 생성' : null;
+  const origin = ORIGIN.find(([src]) => sources.includes(src))?.[1] ?? null;
+  const hasCaption = Object.values(caps).some(Boolean);
   return (
     <section className="bc-box">
-      <h3 className="bc-h3">설명 {origin ? <span className={`bc-badge${origin === 'AI 생성' ? ' gray' : ''}`}>{origin}</span> : <span className="bc-badge warn">없음</span>}</h3>
+      <h3 className="bc-h3">설명 {origin ? <span className={`bc-badge${origin === '직접 고침' ? '' : ' gray'}`}>{origin}</span> : !hasCaption && <span className="bc-badge warn">없음</span>}</h3>
       <div className="bc-tabs" style={{ marginTop: 10 }}>{LANGS.map(([k, label]) => <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{label}{caps[k] ? '' : ' ·'}</button>)}</div>
       <textarea className="bc-textarea" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="이 언어의 설명 (alt 로 나가요)" rows={4} />
       <div className="mt-8 bc-row">
