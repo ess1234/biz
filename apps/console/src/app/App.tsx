@@ -1,19 +1,17 @@
 /// 콘솔 라우트 (biz-dev-08 3절): 로그인 · 첫 로그인 · 셸 안의 화면들 · 옛 주소 넘기기.
 /// 화면은 경로별로 따로 받는다(lazy) — 로그인 · 셸만 첫 번들에. 받는 동안 셸은 그대로, 본문만 Loading.
-import { type ComponentType, Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { AuthCallbackPage, LoginPage } from '../features/auth/Login';
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { SessionProvider } from '../lib/session';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { Loading } from '../ui/common';
 import { Shell } from './Shell';
+import { page } from './lazyPage';
 
-/** 이름 있는 export 를 React.lazy 로 (lazy 는 default export 만 받는다) */
-function page<M, K extends keyof M>(load: () => Promise<M>, name: K) {
-  return lazy(() => load().then((m) => ({ default: m[name] as ComponentType })));
-}
 const HomePage = page(() => import('../features/home/Home'), 'HomePage');
 const WelcomePage = page(() => import('../features/home/Welcome'), 'WelcomePage');
 const ImagesPage = page(() => import('../features/images/Images'), 'ImagesPage');
@@ -58,7 +56,7 @@ export function App() {
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/me/*" element={<LegacyRedirect />} />
             <Route path="/me" element={<LegacyRedirect />} />
-            <Route path="/welcome" element={<RequireAuth><Suspense fallback={<Loading />}><WelcomePage /></Suspense></RequireAuth>} />
+            <Route path="/welcome" element={<RequireAuth><ErrorBoundary><Suspense fallback={<Loading />}><WelcomePage /></Suspense></ErrorBoundary></RequireAuth>} />
             <Route path="/" element={<RequireAuth><Shell /></RequireAuth>}>
               <Route index element={<HomePage />} />
               <Route path="images" element={<ImagesPage />} />

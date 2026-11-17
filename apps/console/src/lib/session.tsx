@@ -2,6 +2,7 @@
 /// B2B 가입은 dossaiBiz 의 가입 트리거가 회사 워크스페이스를 만든다(biz_0001) — 개인 계정 개념은 화면에 없다.
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { type Me } from '../data/types';
 import { ApiError, api, currentAccountId, rotateWebDeviceId, setCurrentAccountId, setCurrentUserId, webDeviceId } from './api';
@@ -27,6 +28,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const qc = useQueryClient();
   const inflight = React.useRef<string | null>(null);
   const bootstrap = useCallback(async (s: Session | null) => {
     if (!s) { setCurrentUserId(null); setMe(null); setErrorCode(null); setError(null); return; }
@@ -71,10 +73,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase().auth.onAuthStateChange((event, s) => {
       setSession(s);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') bootstrap(s);
-      if (event === 'SIGNED_OUT') { setMe(null); setErrorCode(null); }
+      // 로그아웃하면 조회 캐시를 비운다 — 같은 브라우저에서 다른 계정으로 들어왔을 때 이전 워크스페이스의 사용량 · 설정이 보이지 않게
+      if (event === 'SIGNED_OUT') { setMe(null); setErrorCode(null); qc.clear(); }
     });
     return () => { alive = false; sub.subscription.unsubscribe(); };
-  }, [bootstrap]);
+  }, [bootstrap, qc]);
 
   const value = useMemo<SessionState>(() => ({
     loading, session, me, errorCode, error,

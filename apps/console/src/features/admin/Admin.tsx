@@ -9,6 +9,7 @@ import { INVOICE_STATUS } from '../../data/invoices';
 import { qk } from '../../data/keys';
 import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
 import { api } from '../../lib/api';
+import { toastError } from '../../lib/errors';
 import { fmtDate, fmtDateTime, fmtMB, krw } from '../../lib/format';
 import { useSession } from '../../lib/session';
 import { toast } from '../../lib/toast';
@@ -108,9 +109,9 @@ function BizOps({ base }: { base: string }) {
   const inv = useQuery({ queryKey: [...qk.adminInvoices, period], queryFn: () => api.get<AdminInvoices>(`${base}/invoices`, period ? { period } : {}), staleTime: 30_000 });
   const dels = useQuery({ queryKey: qk.adminDeletions, queryFn: () => api.get<AdminDeletions>(`${base}/deletions`), staleTime: 30_000 });
   const backups = useQuery({ queryKey: [...qk.admin, 'backups'], queryFn: () => api.get<AdminBackups>(`${base}/backups`, { limit: 10 }), staleTime: 60_000 });
-  const setStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${base}/invoices/${id}`, { status }), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminInvoices }) });
-  const generate = useMutation({ mutationFn: () => api.post<InvoiceGenerated>(`${base}/invoices:generate`, {}), onSuccess: (r) => { toast(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: qk.adminInvoices }); } });
-  const approve = useMutation({ mutationFn: (id: string) => api.post(`${base}/accounts/${id}/approve-delete`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminDeletions }) });
+  const setStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${base}/invoices/${id}`, { status }), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminInvoices }), onError: toastError });
+  const generate = useMutation({ mutationFn: () => api.post<InvoiceGenerated>(`${base}/invoices:generate`, {}), onSuccess: (r) => { toast(`전월 청구서 ${r.created}건 생성 (건너뜀 ${r.skipped})`); qc.invalidateQueries({ queryKey: qk.adminInvoices }); }, onError: toastError });
+  const approve = useMutation({ mutationFn: (id: string) => api.post(`${base}/accounts/${id}/approve-delete`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: qk.adminDeletions }), onError: toastError });
   const tot = inv.data?.totals;
   return (
     <>

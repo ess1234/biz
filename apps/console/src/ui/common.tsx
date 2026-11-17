@@ -1,7 +1,7 @@
 /// 공통 화면 조각 (11-16 디자인 A): 페이지 머리 · 빈 화면 · 탭 바. 아이콘은 lucide-react 를 .bc-ico 크기로.
 import type { ReactNode } from 'react';
 
-export { ArrowRight, BarChart3, Check, ChevronDown, Copy, ExternalLink, Image as ImageIcon, KeyRound, LayoutGrid, LogOut, Plug, Settings, Shield, Upload } from 'lucide-react';
+export { ArrowRight, BarChart3, Check, ChevronDown, ExternalLink, Image as ImageIcon, KeyRound, LayoutGrid, LogOut, Plug, Settings, Shield, Upload } from 'lucide-react';
 
 /** 화면 맨 위: 제목 · 한 줄 설명 · 오른쪽 주 버튼(화면당 primary 하나). */
 export function PageHead({ title, sub, badge, actions }: { title: ReactNode; sub?: ReactNode; badge?: ReactNode; actions?: ReactNode }) {
