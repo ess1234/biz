@@ -4,7 +4,7 @@
  *  - alt 가 이미 있으면 건드리지 않는다(data-force 면 덮어씀). data-jsonld 면 ImageObject JSON-LD 를 <head> 에 넣는다
  *  - data-xmp (선택, 11-16 자기 식별 이미지): 우리 주소가 아닌 이미지(퍼간 파일·고객 서버에 복사된 파일)와 메타 API 에 실패한 이미지는
  *    파일 앞부분(최대 256KB)을 받아 XMP 를 읽는다. im:id 가 있으면 그 id 로 최신 설명을 메타 API 에 묻고, 못 받으면 파일 안 설명을 쓴다.
- *    기본 최대 20장(data-xmp="50" 처럼 숫자로 조정). CORS 가 막힌 이미지는 조용히 건너뜀. JPEG(APP1)·PNG(iTXt)만.
+ *    기본 최대 20장(data-xmp="50" 처럼 숫자로 조정). CORS 가 막힌 이미지는 조용히 건너뜀. JPEG(APP1)·PNG(iTXt)·WebP·AVIF.
  *  - 실패해도 페이지는 그대로(조용히 끝). 콘솔에 아무것도 찍지 않는다
  */
 (function () {
@@ -146,8 +146,24 @@
         }
         q += 12 + n;
       }
+      return null;
+    }
+    // WebP(RIFF…WEBP) · AVIF/HEIF(…ftyp): XMP 는 압축 없이 들어 있어 패킷을 바이트로 찾는다 (AVIF 는 파일 앞쪽, WebP 는 끝 — 받은 256KB 안에 있을 때만)
+    if ((b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[8] === 0x57) || (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70)) {
+      var s0 = find(b, '<x:xmpmeta', 0), e0 = s0 < 0 ? -1 : find(b, '</x:xmpmeta>', s0);
+      if (e0 > 0) return dec(b.subarray(s0, e0 + 12));
     }
     return null;
+  }
+  function find(b, str, from) {
+    var c0 = str.charCodeAt(0), n = str.length;
+    for (var i = from; i + n <= b.length; i++) {
+      if (b[i] !== c0) continue;
+      var k = 1;
+      while (k < n && b[i + k] === str.charCodeAt(k)) k++;
+      if (k === n) return i;
+    }
+    return -1;
   }
   function parseXmp(xml) {
     var doc;
