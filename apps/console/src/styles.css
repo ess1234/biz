@@ -80,6 +80,7 @@ h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -.01em; }
 
 .bc-h { font-size: 22px; margin-bottom: 4px; }
 .bc-muted { color: var(--bc-muted); font-size: 13px; line-height: 1.6; }
+.bc-error { color: var(--bc-danger); font-size: 13px; line-height: 1.6; }   /* 표 안의 짧은 오류 줄(진단 보고서 발송 실패 등) */
 .bc-sec { margin-top: 24px; }
 .bc-sec > h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .bc-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }

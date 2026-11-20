@@ -103,11 +103,12 @@ export function AdminPage() {
 
 /// 청구서 · 삭제 승인 · 백업 기록 — 숫자 · 상태 · 이름만
 const AR_STATUS: Record<AuditRequest['status'], [string, string]> = {
-  new: ['새 신청', ' warn'], running: ['진단 중', ''], sent: ['보냄', ''], rejected: ['거절', ' gray'], spam: ['스팸', ' gray'], duplicate: ['중복', ' gray'],
+  new: ['새 신청', ' warn'], running: ['진단 중', ''], review: ['검토 대기', ' warn'], sent: ['보냄', ''], rejected: ['거절', ' gray'], spam: ['스팸', ' gray'], duplicate: ['중복', ' gray'],
 };
 
 /// 진단 명령 — 운영자 PC 의 dos 폴더에서 실행. 이메일 도메인이 사이트와 같을 때만 --ai(사이트 주인 요청, biz-dev-11 DG-5)
-const auditCommand = (r: AuditRequest) => `python scripts/site_audit.py ${r.site_url}${r.owner_match ? ' --ai' : ''}`;
+/// --request 를 붙여 실행하면 보고서가 이 신청에 붙어 '검토 대기'가 된다(biz-dev-13)
+const auditCommand = (r: AuditRequest) => `python scripts/site_audit.py ${r.site_url}${r.owner_match ? ' --ai' : ''} --request ${r.id}`;
 
 function NoteEdit({ value, busy, onSave }: { value: string; busy: boolean; onSave: (v: string) => void }) {
   const [v, setV] = useState(value);
@@ -127,8 +128,17 @@ function AuditRequests({ base }: { base: string }) {
   const done = () => qc.invalidateQueries({ queryKey: qk.adminAuditRequests });
   const patch = useMutation({ mutationFn: ({ id, ...b }: { id: string; status?: string; note?: string }) => api.patch(`${base}/audit-requests/${id}`, b), onSuccess: done, onError: toastError });
   const del = useMutation({ mutationFn: (id: string) => api.delete(`${base}/audit-requests/${id}`), onSuccess: () => { toast('지웠어요'); done(); }, onError: toastError });
+  // 보내기: 서버가 Resend 로 신청 이메일에 보고서 링크를 보낸다. 실패하면 이유가 목록에 남는다(send_error)
+  const send = useMutation({
+    mutationFn: ({ id, resend }: { id: string; resend: boolean }) => api.post<{ to: string }>(`${base}/audit-requests/${id}:send`, { resend }),
+    onSuccess: (r) => { toast(`보냈어요 — ${r.to}`); done(); },
+    onError: (e) => { toastError(e); done(); },
+  });
+  const openReport = async (r: AuditRequest) => {
+    try { const x = await api.get<{ url: string }>(`${base}/audit-requests/${r.id}/report`); window.open(x.url, '_blank', 'noopener'); } catch (e) { toastError(e); }
+  };
   const d = q.data;
-  const items = (d?.items ?? []).filter((r) => show === 'all' || r.status === 'new' || r.status === 'running');
+  const items = (d?.items ?? []).filter((r) => show === 'all' || r.status === 'new' || r.status === 'running' || r.status === 'review');
   const copy = async (r: AuditRequest) => {
     try { await navigator.clipboard.writeText(auditCommand(r)); toast('진단 명령을 복사했어요'); } catch { toast(auditCommand(r)); }
   };
@@ -151,11 +161,16 @@ function AuditRequests({ base }: { base: string }) {
                   <td>{fmtDateTime(r.created_at)}</td>
                   <td><a href={r.site_url} target="_blank" rel="noreferrer noopener">{r.site_host}</a>{r.owner_match && <> <span className="bc-badge" title="이메일 도메인이 사이트와 같아요 — AI 미리보기 대상">주인</span></>}</td>
                   <td>{r.email ?? '(1년 지나 지움)'}{r.free_mail && <> <span className="bc-badge gray">개인 메일</span></>}{r.company && <div className="bc-muted">{r.company}</div>}{r.note && <div className="bc-muted">메모: {r.note}</div>}</td>
-                  <td><span className={`bc-badge${AR_STATUS[r.status][1]}`}>{AR_STATUS[r.status][0]}</span></td>
+                  <td><span className={`bc-badge${AR_STATUS[r.status][1]}`}>{AR_STATUS[r.status][0]}</span>
+                    {r.report_summary && <div className="bc-muted">설명 없음 {r.report_summary.lacking_pct ?? '–'}% · 용량 −{r.report_summary.saved_pct ?? '–'}% · {r.report_summary.plan}</div>}
+                    {r.sent_at && <div className="bc-muted">보낸 때 {fmtDateTime(r.sent_at)}</div>}
+                    {r.send_error && <div className="bc-error">발송 실패: {r.send_error}</div>}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="bc-btn small" onClick={() => copy(r)} title={auditCommand(r)}>명령 복사</button>{' '}
                     {r.status === 'new' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'running' })}>진단 중</button>}{' '}
-                    {(r.status === 'new' || r.status === 'running') && <button className="bc-btn small primary" disabled={patch.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 보냈나요?`, { ok: '보냄으로' })) patch.mutate({ id: r.id, status: 'sent' }); }}>보냄</button>}{' '}
+                    {r.has_report && <button className="bc-btn small" onClick={() => openReport(r)}>보고서 보기</button>}{' '}
+                    {r.has_report && r.status === 'review' && r.email && <button className="bc-btn small primary" disabled={send.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 ${r.email} 로 보낼까요? hello@dossai.app 이름으로 나가요.`, { ok: '보내기' })) send.mutate({ id: r.id, resend: false }); }}>보내기</button>}{' '}
+                    {r.has_report && r.status === 'sent' && r.email && <button className="bc-btn small" disabled={send.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 ${r.email} 로 한 번 더 보낼까요?`, { ok: '다시 보내기' })) send.mutate({ id: r.id, resend: true }); }}>다시 보내기</button>}{' '}
                     {r.status !== 'rejected' && r.status !== 'sent' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'rejected' })}>거절</button>}{' '}
                     <NoteEdit value={r.note ?? ''} busy={patch.isPending} onSave={(note) => patch.mutate({ id: r.id, note })} />{' '}
                     <button className="bc-btn small danger" disabled={del.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 신청을 지울까요? 신청자가 삭제를 요청했을 때 써요. 되돌릴 수 없어요.`, { ok: '지우기', danger: true })) del.mutate(r.id); }}>지우기</button>

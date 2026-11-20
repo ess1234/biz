@@ -62,7 +62,10 @@ export type AdminBackups = { items: BackupRun[]; last_ok: Record<string, string>
 /// 진단 신청(biz-dev-12) — dossai.app/business 양식. owner_match = 이메일 도메인이 사이트와 같음(AI 미리보기 대상)
 export type AuditRequest = {
   id: string; created_at: string; site_url: string; site_host: string; email: string | null; email_domain: string | null; company: string | null;
-  owner_match: boolean; free_mail: boolean; status: 'new' | 'running' | 'sent' | 'rejected' | 'spam' | 'duplicate'; note: string | null; handled_at: string | null;
+  owner_match: boolean; free_mail: boolean; status: 'new' | 'running' | 'review' | 'sent' | 'rejected' | 'spam' | 'duplicate'; note: string | null; handled_at: string | null;
+  /// 보고서(biz-dev-13): 진단 도구 --request 가 붙임 → review. 보내면 sent_at
+  has_report?: boolean; report_summary?: { lacking?: number; lacking_pct?: number; saved_pct?: number; plan?: string } | null;
+  report_at?: string | null; report_expires_at?: string | null; sent_at?: string | null; send_error?: string | null;
 };
 export type AdminAuditRequests = { items: AuditRequest[]; new_count: number; ready: boolean };
 export type AdminLangs = { langs: string[]; extra_langs: string[]; options: string[]; labels: Record<string, string>; ai_consent: boolean; missing_count: number; queued?: number };
