@@ -12,7 +12,7 @@
   var s = document.currentScript || (function () { var a = document.getElementsByTagName('script'); return a[a.length - 1]; })();
   if (!s) return;
   var key = s.getAttribute('data-key') || '';
-  var lang = s.getAttribute('data-lang') || (document.documentElement.lang || 'ko').slice(0, 2);
+  var lang = s.getAttribute('data-lang') || document.documentElement.lang || 'ko';   // 자르지 않는다 — zh-Hant · zh-TW(번체)가 zh(간체)로 바뀌지 않게. 맞추기는 서버가
   var api = s.getAttribute('data-api');
   if (!api) { try { api = new URL(s.src).origin + '/t23/v1'; } catch (e) { api = '/t23/v1'; } }
   api = api.replace(/\/$/, '');

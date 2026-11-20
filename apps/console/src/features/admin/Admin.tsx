@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import { VIS } from '../../data/assets';
 import { INVOICE_STATUS } from '../../data/invoices';
 import { qk } from '../../data/keys';
-import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
+import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminLangs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
 import { api } from '../../lib/api';
 import { toastError } from '../../lib/errors';
 import { fmtDate, fmtDateTime, fmtMB, krw } from '../../lib/format';
@@ -175,6 +175,45 @@ function BizOps({ base }: { base: string }) {
   );
 }
 
+/// 추가 언어(biz-dev-10 LG-2): 요금이 정해질 때까지 운영자만 켠다. 기본 4개 언어는 항상이라 여기 없다.
+/// "기존 이미지에도"는 이미 분석된 이미지를 다시 보내 그 언어의 설명만 만든다 — AI 비용이 든다.
+function LangsBox({ base, id }: { base: string; id: string }) {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: qk.adminLangs(id), queryFn: () => api.get<AdminLangs>(`${base}/accounts/${id}/langs`), enabled: Boolean(id) });
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+  const save = useMutation({
+    mutationFn: (backfill: boolean) => api.patch<AdminLangs>(`${base}/accounts/${id}/langs`, { extra_langs: [...(picked ?? new Set(q.data?.extra_langs ?? []))], backfill }),
+    onSuccess: (r, backfill) => { qc.setQueryData(qk.adminLangs(id), r); setPicked(null); toast(backfill ? `저장했어요 — 기존 이미지 ${r.queued ?? 0}장에 언어 추가를 걸었어요` : '저장했어요'); },
+    onError: toastError,
+  });
+  if (q.isError) return <p className="bc-muted bc-sec">추가 언어 설정을 불러오지 못했어요.</p>;
+  if (!q.data) return null;
+  const d = q.data;
+  const on = picked ?? new Set(d.extra_langs);
+  const dirty = picked !== null && (picked.size !== d.extra_langs.length || d.extra_langs.some((l) => !picked.has(l)));
+  return (
+    <section className="bc-box bc-sec">
+      <h3 className="bc-h3">추가 언어 <span className="bc-muted">기본 4개 언어는 항상 · 추가는 언어마다 요금</span></h3>
+      {d.options.map((l) => (
+        <label key={l} className="bc-check" style={{ marginTop: 6 }}>
+          <input type="checkbox" checked={on.has(l)} onChange={(e) => { const n = new Set(on); if (e.target.checked) n.add(l); else n.delete(l); setPicked(n); }} />
+          <span><b>{d.labels[l] ?? l}</b> <span className="bc-muted">{l}</span></span>
+        </label>
+      ))}
+      <div className="bc-row">
+        <button className="bc-btn small primary" disabled={!dirty || save.isPending} onClick={() => save.mutate(false)}>저장</button>
+        {d.extra_langs.length > 0 && !dirty && d.missing_count > 0 && (
+          <button className="bc-btn small" disabled={save.isPending || !d.ai_consent} title={d.ai_consent ? '' : '이 워크스페이스는 AI 분석이 꺼져 있어요'}
+            onClick={async () => { if (await askConfirm(`기존 이미지 ${d.missing_count}장에 켠 언어의 설명을 만들까요? 이미지마다 AI 를 한 번 더 불러 비용이 들어요.`, { ok: '만들기' })) save.mutate(true); }}>
+            기존 이미지 {d.missing_count}장에도 적용
+          </button>
+        )}
+      </div>
+      <p className="mb-0 bc-muted">켜면 새로 올리는 이미지부터 그 언어의 설명이 같이 만들어져요. 끄면 만든 설명은 남기고 내보내기만 멈춰요.</p>
+    </section>
+  );
+}
+
 export function AdminAccountPage() {
   const base = useAdminPath();
   const { id = '' } = useParams();
@@ -189,6 +228,7 @@ export function AdminAccountPage() {
       <h2 className="bc-h bc-sec">{d.account.name}</h2>
       <p className="bc-muted">가입 {fmtDateTime(d.account.created_at)} · 분석 작업(최근 50) {counts(d.jobs?.by_status, STATUS_LABEL)}</p>
       {d.jobs.recent_failed.length > 0 && <ul className="bc-plain">{d.jobs.recent_failed.map((f, i) => <li key={i}><span className="bc-muted">{fmtDateTime(f.at)}</span><div className="bc-mono">{f.error}</div></li>)}</ul>}
+      <LangsBox base={base} id={id} />
       <h3 className="bc-h3 bc-sec">최근 이미지 {d.recent_assets?.length ?? 0}건 <span className="bc-badge gray">글만</span></h3>
       <table className="mt-8 bc-table">
         <thead><tr><th>올림</th><th>상태</th><th>공개 범위</th><th>크기</th><th>설명</th><th>키워드</th><th>출처</th></tr></thead>

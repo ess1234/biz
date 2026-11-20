@@ -13,7 +13,7 @@
  *   imagemeta inject <빌드 결과 폴더>      빌드 뒤 HTML 에 alt · JSON-LD
  *
  * 공통: --api-base <url>(또는 IMAGEMETA_API_BASE) · 키는 IMAGEMETA_API_KEY 환경 변수로만 · --json · --dry-run(쓰기 명령)
- *       --manifest <파일>(기본 imagemeta.json) · --lang <ko|en|ja|zh>(또는 IMAGEMETA_LANG)
+ *       --manifest <파일>(기본 imagemeta.json) · --lang <ko|en|ja|zh|es|vi|zh-Hant>(또는 IMAGEMETA_LANG — 추가 언어는 워크스페이스에 켜져 있을 때)
  * 종료 코드: 0 정상 · 1 실패(API 오류 · 분석 실패 · 시간 초과 · 한도) · 2 사용법 오류(확인 필요한 --yes 포함)
  * 결과는 stdout, 진행 상황은 stderr.
  */

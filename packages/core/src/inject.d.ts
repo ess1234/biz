@@ -25,5 +25,7 @@ export interface InjectReport {
   dryRun: boolean;
 }
 
+/** en-US → en · zh-TW → zh-Hant. 모르는 언어면 null */
+export function normalizeLang(tag: string): string | null;
 export function htmlLang(html: string): string | null;
 export function injectDir(dir: string, opts: InjectOptions): Promise<InjectReport>;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
+import { BASE_LANGS, BASE_LANG_LABELS } from '../../data/assets';
 import { useSettings } from '../../data/hooks';
 import { qk } from '../../data/keys';
 import { type ExportJob } from '../../data/types';
@@ -86,6 +87,13 @@ export function SettingsPage() {
               : <button className="bc-btn primary" disabled={ai.isPending} onClick={() => ai.mutate(true)}>AI 분석 켜기</button>}
           </div>
         )}
+      </section>
+
+      <section className="bc-sec bc-box">
+        <h3 className="bc-h3">설명 언어</h3>
+        <p className="bc-muted">이미지마다 아래 언어로 설명을 만들어, alt 와 파일 안 설명에 함께 내보내요.</p>
+        <p>{(s?.langs ?? BASE_LANGS).map((k) => <span key={k} className={`bc-badge${(s?.extra_langs ?? []).includes(k) ? '' : ' gray'}`} style={{ marginRight: 6 }}>{s?.lang_labels?.[k] ?? BASE_LANG_LABELS[k] ?? k}</span>)}</p>
+        <p className="mb-0 bc-muted">기본 네 언어는 모든 요금제에 들어 있어요. 스페인어 · 베트남어 · 중국어 번체 같은 언어는 추가 옵션이에요 — 담당자에게 요청해 주세요.</p>
       </section>
 
       <section className="bc-sec bc-box">

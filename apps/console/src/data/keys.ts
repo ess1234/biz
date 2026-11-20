@@ -17,4 +17,5 @@ export const qk = {
   adminInvoices: ['admin', 'invoices'] as const,
   adminDeletions: ['admin', 'deletions'] as const,
   adminAccount: (id: string) => ['admin', 'account', id] as const,
+  adminLangs: (id: string) => ['admin', 'langs', id] as const,
 };

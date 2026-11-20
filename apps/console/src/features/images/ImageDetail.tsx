@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { VIS, VIS_ORDER } from '../../data/assets';
-import { invalidateAsset, useAsset } from '../../data/hooks';
+import { BASE_LANGS, BASE_LANG_LABELS, VIS, VIS_ORDER } from '../../data/assets';
+import { invalidateAsset, useAsset, useSettings } from '../../data/hooks';
 import { qk } from '../../data/keys';
 import { type Asset } from '../../data/types';
 import { ApiError, api } from '../../lib/api';
@@ -16,7 +16,6 @@ import { fileUrl, useFileUrl } from '../../lib/thumbs';
 import { toast } from '../../lib/toast';
 import { permanentUrl } from '../../lib/urls';
 
-const LANGS: [string, string][] = [['ko', '한국어'], ['en', 'English'], ['ja', '日本語'], ['zh', '中文']];
 const WIDTHS = [400, 800, 1200];
 
 function Copy({ label, text }: { label: string; text: string }) {
@@ -93,6 +92,10 @@ const ORIGIN = [['manual', '직접 고침'], ['ai', 'AI 생성'], ['local', '기
 
 function Description({ a }: { a: Asset }) {
   const caps: Record<string, string> = a.chosen?.caption ?? {};
+  const settings = useSettings();
+  // 언어 탭 = 기본 4개 + 이 워크스페이스가 켠 추가 언어(스페인어 · 베트남어 · 번체 …)
+  const langs = settings.data?.langs ?? BASE_LANGS;
+  const label = (k: string) => settings.data?.lang_labels?.[k] ?? BASE_LANG_LABELS[k] ?? k;
   const sources = useMemo(() => a.analyses?.map((x) => x.source) ?? [], [a]);
   const [lang, setLang] = useState(() => (caps.ko ? 'ko' : Object.keys(caps)[0] || 'ko'));
   const [draft, setDraft] = useState(caps[lang] ?? '');
@@ -104,7 +107,7 @@ function Description({ a }: { a: Asset }) {
   return (
     <section className="bc-box">
       <h3 className="bc-h3">설명 {origin ? <span className={`bc-badge${origin === '직접 고침' ? '' : ' gray'}`}>{origin}</span> : !hasCaption && <span className="bc-badge warn">없음</span>}</h3>
-      <div className="bc-tabs" style={{ marginTop: 10 }}>{LANGS.map(([k, label]) => <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{label}{caps[k] ? '' : ' ·'}</button>)}</div>
+      <div className="bc-tabs" style={{ marginTop: 10 }}>{langs.map((k) => <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{label(k)}{caps[k] ? '' : ' ·'}</button>)}</div>
       <textarea className="bc-textarea" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="이 언어의 설명 (alt 로 나가요)" rows={4} />
       <div className="mt-8 bc-row">
         <button className="bc-btn small primary" disabled={!dirty || patch.isPending} onClick={() => patch.mutate({ caption: { [lang]: draft } }, { onSuccess: () => toast('저장했어요 — 사이트에는 몇 분 안에 반영돼요') })}>저장</button>

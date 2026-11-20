@@ -17,6 +17,8 @@ export type ApiKey = { id: string; label: string | null; scopes: string[]; last_
 export type WorkspaceSettings = {
   ai_consent_at: string | null; plan: string; plan_label?: string | null; delete_requested_at: string | null; delete_approved_at: string | null;
   delete_grace_days: number; delete_approval_required: boolean; analysis_lang: string; updated_at?: string;
+  /// 설명 언어(biz-dev-10): langs = 기본 4개 + 켠 추가 언어. 추가 언어는 운영자가 켠다 — 서버가 아직 안 주면(옛 배포) 화면이 기본 4개로 그린다
+  langs?: string[]; extra_langs?: string[]; extra_lang_options?: string[]; lang_labels?: Record<string, string>;
 };
 export type UsageSummary = {
   from: string; to: string; totals: Record<string, number>; limits: Record<string, number | null>; plan: string; plan_label?: string | null;
@@ -57,6 +59,7 @@ export type AdminDeletion = { account_id: string; name: string | null; delete_re
 export type AdminDeletions = { items: AdminDeletion[]; grace_days: number; approval_required: boolean };
 export type BackupRun = { id: string; kind: string; dest: string | null; ok: boolean; objects: number | null; bytes: number | null; note: string | null; started_at: string; finished_at: string | null };
 export type AdminBackups = { items: BackupRun[]; last_ok: Record<string, string> };
+export type AdminLangs = { langs: string[]; extra_langs: string[]; options: string[]; labels: Record<string, string>; ai_consent: boolean; missing_count: number; queued?: number };
 export type AdminAccountAsset = {
   id: string; created_at: string; status: string; visibility: string | null; bytes: number | null; size: string | null; deleted: boolean;
   caption: string | null; keywords: string[]; sources: string[];

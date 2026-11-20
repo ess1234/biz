@@ -19,7 +19,17 @@ import { extname, join, relative } from 'node:path';
 import { createClient, injectAlt, jsonLdScript } from './index.js';
 
 const HTML_EXT = new Set(['.html', '.htm']);
-const LANGS = new Set(['ko', 'en', 'ja', 'zh']);
+// 서버가 아는 설명 언어 — 기본 4개 + 추가 언어(워크스페이스가 켠 것만 실제로 나온다. 켜지 않은 언어를 요청하면 서버가 ko 로 답한다).
+// 언어를 더하면 dos 의 langs.EXTRA_LANGS 와 여기를 같이 고친다
+const LANGS = new Set(['ko', 'en', 'ja', 'zh', 'es', 'vi', 'zh-Hant']);
+
+/** 'en-US' → 'en' · 'zh-TW' | 'zh-Hant-HK' → 'zh-Hant' · 'zh-CN' → 'zh'. 모르는 언어면 null (dos langs.normalize 와 같은 규칙) */
+export function normalizeLang(tag) {
+  const parts = String(tag || '').trim().replace(/_/g, '-').toLowerCase().split('-');
+  if (!parts[0]) return null;
+  if (parts[0] === 'zh') return parts.slice(1).some((p) => p === 'hant' || p === 'tw' || p === 'hk' || p === 'mo') ? 'zh-Hant' : 'zh';
+  return LANGS.has(parts[0]) ? parts[0] : null;
+}
 const LD_RE = /\n?<script type="application\/ld\+json" data-imagemeta>[\s\S]*?<\/script>/i;
 
 async function* walkHtml(dir) {
@@ -30,11 +40,10 @@ async function* walkHtml(dir) {
   }
 }
 
-/** <html lang="en-US"> → 'en'. 지원 언어가 아니면 null */
+/** <html lang="en-US"> → 'en' · <html lang="zh-TW"> → 'zh-Hant'. 지원 언어가 아니면 null */
 export function htmlLang(html) {
-  const m = /<html\b[^>]*\blang\s*=\s*["']?([A-Za-z]{2})/i.exec(html);
-  const l = m && m[1].toLowerCase();
-  return l && LANGS.has(l) ? l : null;
+  const m = /<html\b[^>]*\blang\s*=\s*["']?([A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})*)/i.exec(html);
+  return m ? normalizeLang(m[1]) : null;
 }
 
 function withJsonLd(html, ld) {
