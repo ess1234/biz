@@ -59,6 +59,12 @@ export type AdminDeletion = { account_id: string; name: string | null; delete_re
 export type AdminDeletions = { items: AdminDeletion[]; grace_days: number; approval_required: boolean };
 export type BackupRun = { id: string; kind: string; dest: string | null; ok: boolean; objects: number | null; bytes: number | null; note: string | null; started_at: string; finished_at: string | null };
 export type AdminBackups = { items: BackupRun[]; last_ok: Record<string, string> };
+/// 진단 신청(biz-dev-12) — dossai.app/business 양식. owner_match = 이메일 도메인이 사이트와 같음(AI 미리보기 대상)
+export type AuditRequest = {
+  id: string; created_at: string; site_url: string; site_host: string; email: string | null; email_domain: string | null; company: string | null;
+  owner_match: boolean; free_mail: boolean; status: 'new' | 'running' | 'sent' | 'rejected' | 'spam' | 'duplicate'; note: string | null; handled_at: string | null;
+};
+export type AdminAuditRequests = { items: AuditRequest[]; new_count: number; ready: boolean };
 export type AdminLangs = { langs: string[]; extra_langs: string[]; options: string[]; labels: Record<string, string>; ai_consent: boolean; missing_count: number; queued?: number };
 export type AdminAccountAsset = {
   id: string; created_at: string; status: string; visibility: string | null; bytes: number | null; size: string | null; deleted: boolean;

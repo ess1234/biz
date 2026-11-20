@@ -2,7 +2,11 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { useQuery } from '@tanstack/react-query';
 import { useUsage } from '../data/hooks';
+import { qk } from '../data/keys';
+import type { AdminAuditRequests } from '../data/types';
+import { api } from '../lib/api';
 import { METRIC_LABEL } from '../data/usage';
 import { BRAND } from '../lib/env';
 import { useSession } from '../lib/session';
@@ -92,6 +96,13 @@ function UsageAlert() {
   return <NavLink to="/billing" className="bc-alert" title="이번 달 한도의 80% 를 넘었어요">한도 80% · {warn.map((m) => METRIC_LABEL[m] ?? m).join(', ')}</NavLink>;
 }
 
+/// 운영 메뉴 옆 새 진단 신청 수(biz-dev-12 AR-3). 5분마다 다시 봄 — 메일 알림이 없어서
+function NewAuditBadge({ path }: { path: string }) {
+  const q = useQuery({ queryKey: qk.adminAuditRequests, queryFn: () => api.get<AdminAuditRequests>(`${path}/audit-requests`, { limit: 200 }), staleTime: 60_000, refetchInterval: 300_000, retry: false });
+  const n = q.data?.new_count ?? 0;
+  return n > 0 ? <span className="bc-badge warn" style={{ marginLeft: 6 }} aria-label={`새 진단 신청 ${n}건`}>{n}</span> : null;
+}
+
 export function Shell() {
   const { me } = useSession();
   const { pathname } = useLocation();
@@ -107,7 +118,7 @@ export function Shell() {
       <div className="bc-body">
         <nav className="bc-nav" aria-label="메뉴">
           {MENU.map(([to, label, Icon, end]) => <NavLink key={to} to={to} end={end}><Icon className="bc-ico" />{label}</NavLink>)}
-          {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin"><Shield className="bc-ico" />운영</NavLink></>}
+          {me?.admin && <><span className="bc-spacer" /><NavLink to="/admin" className="bc-admin"><Shield className="bc-ico" />운영<NewAuditBadge path={me.admin.path} /></NavLink></>}
         </nav>
         <main className="bc-main"><ErrorBoundary resetKey={pathname}><Suspense fallback={<Loading />}><Outlet /></Suspense></ErrorBoundary></main>
       </div>

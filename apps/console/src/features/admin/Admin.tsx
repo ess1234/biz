@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import { VIS } from '../../data/assets';
 import { INVOICE_STATUS } from '../../data/invoices';
 import { qk } from '../../data/keys';
-import { type AdminAccount, type AdminAccountDetail, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminLangs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
+import { type AdminAccount, type AdminAccountDetail, type AdminAuditRequests, type AuditRequest, type AdminBackups, type AdminDeletions, type AdminInvoice, type AdminInvoices, type AdminJobs, type AdminLangs, type AdminSummary, type AdminUsageTop, type InvoiceGenerated } from '../../data/types';
 import { api } from '../../lib/api';
 import { toastError } from '../../lib/errors';
 import { fmtDate, fmtDateTime, fmtMB, krw } from '../../lib/format';
@@ -102,6 +102,74 @@ export function AdminPage() {
 }
 
 /// 청구서 · 삭제 승인 · 백업 기록 — 숫자 · 상태 · 이름만
+const AR_STATUS: Record<AuditRequest['status'], [string, string]> = {
+  new: ['새 신청', ' warn'], running: ['진단 중', ''], sent: ['보냄', ''], rejected: ['거절', ' gray'], spam: ['스팸', ' gray'], duplicate: ['중복', ' gray'],
+};
+
+/// 진단 명령 — 운영자 PC 의 dos 폴더에서 실행. 이메일 도메인이 사이트와 같을 때만 --ai(사이트 주인 요청, biz-dev-11 DG-5)
+const auditCommand = (r: AuditRequest) => `python scripts/site_audit.py ${r.site_url}${r.owner_match ? ' --ai' : ''}`;
+
+function NoteEdit({ value, busy, onSave }: { value: string; busy: boolean; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value);
+  return (
+    <>
+      <input className="bc-input w-110" value={v} onChange={(e) => setV(e.target.value)} placeholder="메모" aria-label="메모" />{' '}
+      <button className="bc-btn small" disabled={busy || v === value} onClick={() => onSave(v)}>메모 저장</button>
+    </>
+  );
+}
+
+/// 진단 신청(biz-dev-12): 들어온 신청을 보고 진단을 돌린 뒤 상태를 바꾼다. 신청자가 삭제를 요청하면 지운다
+function AuditRequests({ base }: { base: string }) {
+  const qc = useQueryClient();
+  const [show, setShow] = useState<'open' | 'all'>('open');
+  const q = useQuery({ queryKey: qk.adminAuditRequests, queryFn: () => api.get<AdminAuditRequests>(`${base}/audit-requests`, { limit: 200 }), staleTime: 30_000 });
+  const done = () => qc.invalidateQueries({ queryKey: qk.adminAuditRequests });
+  const patch = useMutation({ mutationFn: ({ id, ...b }: { id: string; status?: string; note?: string }) => api.patch(`${base}/audit-requests/${id}`, b), onSuccess: done, onError: toastError });
+  const del = useMutation({ mutationFn: (id: string) => api.delete(`${base}/audit-requests/${id}`), onSuccess: () => { toast('지웠어요'); done(); }, onError: toastError });
+  const d = q.data;
+  const items = (d?.items ?? []).filter((r) => show === 'all' || r.status === 'new' || r.status === 'running');
+  const copy = async (r: AuditRequest) => {
+    try { await navigator.clipboard.writeText(auditCommand(r)); toast('진단 명령을 복사했어요'); } catch { toast(auditCommand(r)); }
+  };
+  return (
+    <section className="bc-sec">
+      <h3 className="bc-h3">진단 신청 <span className={`bc-badge${d?.new_count ? ' warn' : ' gray'}`}>새 신청 {d?.new_count ?? '–'}</span> <span className="bc-muted">dossai.app/business 양식 · 진단은 자동으로 돌지 않아요</span></h3>
+      {d && !d.ready && <p className="bc-muted">신청 표가 아직 없어요(DB 마이그레이션 biz_0007 전). 양식은 "준비 중"으로 답해요.</p>}
+      {d?.ready && (
+        <>
+          <div className="bc-row">
+            <button className={`bc-btn small${show === 'open' ? ' primary' : ''}`} onClick={() => setShow('open')}>처리할 것</button>
+            <button className={`bc-btn small${show === 'all' ? ' primary' : ''}`} onClick={() => setShow('all')}>전체 {d.items.length}</button>
+          </div>
+          {items.length === 0 && <p className="bc-muted">{show === 'open' ? '처리할 신청이 없어요' : '신청 없음'}</p>}
+          {items.length > 0 && (
+            <table className="mt-8 bc-table">
+              <thead><tr><th>받은 때</th><th>사이트</th><th>이메일 · 회사</th><th>상태</th><th /></tr></thead>
+              <tbody>{items.map((r) => (
+                <tr key={r.id}>
+                  <td>{fmtDateTime(r.created_at)}</td>
+                  <td><a href={r.site_url} target="_blank" rel="noreferrer noopener">{r.site_host}</a>{r.owner_match && <> <span className="bc-badge" title="이메일 도메인이 사이트와 같아요 — AI 미리보기 대상">주인</span></>}</td>
+                  <td>{r.email ?? '(1년 지나 지움)'}{r.free_mail && <> <span className="bc-badge gray">개인 메일</span></>}{r.company && <div className="bc-muted">{r.company}</div>}{r.note && <div className="bc-muted">메모: {r.note}</div>}</td>
+                  <td><span className={`bc-badge${AR_STATUS[r.status][1]}`}>{AR_STATUS[r.status][0]}</span></td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="bc-btn small" onClick={() => copy(r)} title={auditCommand(r)}>명령 복사</button>{' '}
+                    {r.status === 'new' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'running' })}>진단 중</button>}{' '}
+                    {(r.status === 'new' || r.status === 'running') && <button className="bc-btn small primary" disabled={patch.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 보냈나요?`, { ok: '보냄으로' })) patch.mutate({ id: r.id, status: 'sent' }); }}>보냄</button>}{' '}
+                    {r.status !== 'rejected' && r.status !== 'sent' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'rejected' })}>거절</button>}{' '}
+                    <NoteEdit value={r.note ?? ''} busy={patch.isPending} onSave={(note) => patch.mutate({ id: r.id, note })} />{' '}
+                    <button className="bc-btn small danger" disabled={del.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 신청을 지울까요? 신청자가 삭제를 요청했을 때 써요. 되돌릴 수 없어요.`, { ok: '지우기', danger: true })) del.mutate(r.id); }}>지우기</button>
+                  </td>
+                </tr>
+              ))}</tbody>
+            </table>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 function BizOps({ base }: { base: string }) {
   const qc = useQueryClient();
   const [period, setPeriod] = useState('');
@@ -115,6 +183,8 @@ function BizOps({ base }: { base: string }) {
   const tot = inv.data?.totals;
   return (
     <>
+      <AuditRequests base={base} />
+
       <section className="bc-sec">
         <h3 className="bc-h3">청구서 <span className="bc-badge gray">{period || '전체'}</span> <span className="bc-muted">결제는 수동 — 입금 확인 뒤 '결제 확인'</span></h3>
         <div className="bc-row">

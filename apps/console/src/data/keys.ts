@@ -18,4 +18,5 @@ export const qk = {
   adminDeletions: ['admin', 'deletions'] as const,
   adminAccount: (id: string) => ['admin', 'account', id] as const,
   adminLangs: (id: string) => ['admin', 'langs', id] as const,
+  adminAuditRequests: ['admin', 'audit-requests'] as const,
 };
