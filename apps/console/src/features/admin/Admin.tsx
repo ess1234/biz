@@ -159,7 +159,7 @@ function AuditRequests({ base }: { base: string }) {
               <tbody>{items.map((r) => (
                 <tr key={r.id}>
                   <td>{fmtDateTime(r.created_at)}</td>
-                  <td><a href={r.site_url} target="_blank" rel="noreferrer noopener">{r.site_host}</a>{r.owner_match && <> <span className="bc-badge" title="이메일 도메인이 사이트와 같아요 — AI 미리보기 대상">주인</span></>}</td>
+                  <td><a href={r.site_url} target="_blank" rel="noreferrer noopener">{r.site_host}</a>{r.owner_match && <> <span className="bc-badge" title="이메일 도메인이 사이트와 같아요 — AI 미리보기 대상">주인</span></>}{r.recent_report && <> <span className="bc-badge warn" title="이 사이트로 30일 안에 보낸 보고서가 있어요 — 다시 진단할지 정하세요">최근 보고서 있음</span></>}</td>
                   <td>{r.email ?? '(1년 지나 지움)'}{r.free_mail && <> <span className="bc-badge gray">개인 메일</span></>}{r.company && <div className="bc-muted">{r.company}</div>}{r.note && <div className="bc-muted">메모: {r.note}</div>}</td>
                   <td><span className={`bc-badge${AR_STATUS[r.status][1]}`}>{AR_STATUS[r.status][0]}</span>
                     {r.report_summary && <div className="bc-muted">설명 없음 {r.report_summary.lacking_pct ?? '–'}% · 용량 −{r.report_summary.saved_pct ?? '–'}% · {r.report_summary.plan}</div>}
