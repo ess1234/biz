@@ -53,6 +53,7 @@ export function LoginPage() {
           <button className="bc-btn primary" type="submit" disabled={busy}>{mode === 'password' ? '로그인' : '로그인 링크 받기'}</button>
           <button className="bc-btn" type="button" onClick={() => setMode(mode === 'password' ? 'magic' : 'password')}>{mode === 'password' ? '메일 링크로' : '비밀번호로'}</button>
         </div>
+        <p className="bc-muted" style={{ marginTop: 14 }}><Link to="/" className="bc-link">← 서비스 소개 · 무료 진단</Link></p>
       </form>
     </div>
   );

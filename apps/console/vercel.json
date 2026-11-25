@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/t23/v1/:path*", "destination": "https://dos-biz-stage.vercel.app/t23/v1/:path*" },
     { "source": "/d/:key", "destination": "https://dos-biz-stage.vercel.app/d/:key" },
-    { "source": "/((?!assets/|_vercel/|js/|d/).*)", "destination": "/index.html" }
+    { "source": "/r/:token", "destination": "https://dos-biz-stage.vercel.app/r/:token" },
+    { "source": "/((?!assets/|_vercel/|js/|d/|r/).*)", "destination": "/index.html" }
   ]
 }
