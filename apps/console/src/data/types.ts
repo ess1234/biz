@@ -49,6 +49,10 @@ export type AdminAccount = {
   members: { email: string | null; role: string; last_sign_in_at: string | null }[];
   devices: { count: number; last_seen: string | null };
   assets: { total: number; trash: number; bytes: number; by_status: Counts; by_visibility: Counts; last_upload: string | null };
+  /// 마지막 로그인 · 기기 접속 중 가장 늦은 시각
+  last_active?: string | null;
+  /// 요금제 · 이번 달(KST 1일~오늘) 사용량 · 한도 — 저장은 마지막 집계 값, 나머지는 합. 한도 null = 제한 없음
+  billing?: { plan: string; plan_label: string; since: string; limits: Partial<Record<'storage_bytes' | 'egress_bytes' | 'transforms' | 'analyses', number | null>>; month: Partial<Record<string, number>> };
 };
 export type FailedJob = { error: string; at: string | null; attempts?: number; owner_id?: string };
 export type AdminJobs = { by_status: Counts; oldest_queued_at: string | null; recent_failed: FailedJob[]; sample: number };

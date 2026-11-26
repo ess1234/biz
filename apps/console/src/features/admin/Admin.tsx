@@ -27,6 +27,14 @@ function useAdminPath() {
   return me?.admin?.path ?? null;
 }
 
+/// 이번 달 사용량 / 한도 — 80% 이상이면 경고 색. 한도 없음이면 값만
+function Usage({ v, limit, bytes }: { v?: number; limit?: number | null; bytes?: boolean }) {
+  const n = v ?? 0;
+  const show = (x: number) => (!bytes ? Math.round(x).toLocaleString() : x >= 1024 ** 3 ? `${(x / 1024 ** 3).toFixed(x >= 10 * 1024 ** 3 ? 0 : 1)}GB` : fmtMB(x));
+  const pct = limit ? Math.round((n / limit) * 100) : null;
+  return <div>{show(n)}{limit ? <span className={pct != null && pct >= 80 ? ' bc-warn-text' : ' bc-muted'}> / {show(limit)} ({pct}%)</span> : null}</div>;
+}
+
 function Stat({ label, v }: { label: string; v: string }) {
   return <div className="bc-box"><div className="bc-muted">{label}</div><div style={{ marginTop: 4 }}>{v}</div></div>;
 }
@@ -73,17 +81,23 @@ export function AdminPage() {
         <h3 className="bc-h3">워크스페이스 <span className="bc-badge gray">{accounts.data?.items.length ?? '–'}</span></h3>
         {accounts.isLoading ? <p className="bc-muted">불러오는 중…</p> : (
           <table className="mt-8 bc-table">
-            <thead><tr><th>이름</th><th>멤버 · 마지막 로그인</th><th>이미지</th><th>상태</th><th>공개 범위</th><th>마지막 업로드</th></tr></thead>
-            <tbody>{accounts.data?.items.map((a) => (
-              <tr key={a.id}>
-                <td><Link to={`/admin/acc/${a.id}`}>{a.name}</Link><div className="bc-muted">{fmtDate(a.created_at)} 가입</div></td>
-                <td>{(a.members ?? []).map((m, j) => <div key={m.email ?? j}>{m.email ?? '—'} <span className="bc-muted">{fmtDateTime(m.last_sign_in_at)}</span></div>)}</td>
-                <td>{a.assets?.total ?? 0}<div className="bc-muted">휴지통 {a.assets?.trash ?? 0} · {fmtMB(a.assets?.bytes)}</div></td>
-                <td>{counts(a.assets?.by_status, STATUS_LABEL)}</td>
-                <td>{counts(a.assets?.by_visibility, VIS_LABEL)}</td>
-                <td>{fmtDateTime(a.assets?.last_upload)}</td>
-              </tr>
-            ))}</tbody>
+            <thead><tr><th>이름 · 가입</th><th>멤버 이메일</th><th>마지막 접속</th><th>요금제</th><th>이번 달 저장</th><th>이번 달 전송</th><th>변환 · 분석</th><th>이미지</th><th>마지막 업로드</th></tr></thead>
+            <tbody>{accounts.data?.items.map((a) => {
+              const b = a.billing; const m = b?.month ?? {}; const l = b?.limits ?? {};
+              return (
+                <tr key={a.id}>
+                  <td><Link to={`/admin/acc/${a.id}`}>{a.name}</Link><div className="bc-muted">{fmtDate(a.created_at)} 가입</div></td>
+                  <td>{(a.members ?? []).map((x, j) => <div key={x.email ?? j}>{x.email ?? '—'}</div>)}</td>
+                  <td>{fmtDateTime(a.last_active)}<div className="bc-muted">로그인 {fmtDateTime(a.members?.[0]?.last_sign_in_at)}</div></td>
+                  <td>{b?.plan_label ?? '—'}</td>
+                  <td><Usage v={m.storage_bytes} limit={l.storage_bytes} bytes /></td>
+                  <td><Usage v={m.egress_bytes} limit={l.egress_bytes} bytes /></td>
+                  <td><Usage v={m.transforms} limit={l.transforms} /><Usage v={m.analyses} limit={l.analyses} /></td>
+                  <td>{a.assets?.total ?? 0}<div className="bc-muted">{fmtMB(a.assets?.bytes)}{a.assets?.trash ? ` · 휴지통 ${a.assets.trash}` : ''}</div></td>
+                  <td>{fmtDateTime(a.assets?.last_upload)}</td>
+                </tr>
+              );
+            })}</tbody>
           </table>
         )}
       </section>
