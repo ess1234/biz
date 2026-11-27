@@ -2,10 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/t23/v1/:path*", "destination": "https://dos-biz-stage.vercel.app/t23/v1/:path*" },
-    { "source": "/d/:key", "destination": "https://dos-biz-stage.vercel.app/d/:key" },
-    { "source": "/r/:token", "destination": "https://dos-biz-stage.vercel.app/r/:token" },
-    { "source": "/((?!assets/|_vercel/|js/|d/|r/).*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/t23/v1/(.*)", "dest": "https://dos-biz-stage.vercel.app/t23/v1/$1",
+      "transforms": [{ "type": "request.headers", "op": "set", "target": { "key": "x-dos-proxy" }, "args": "$DOS_PROXY_SECRET", "env": ["DOS_PROXY_SECRET"] }] },
+    { "src": "/d/([^/]+)", "dest": "https://dos-biz-stage.vercel.app/d/$1",
+      "transforms": [{ "type": "request.headers", "op": "set", "target": { "key": "x-dos-proxy" }, "args": "$DOS_PROXY_SECRET", "env": ["DOS_PROXY_SECRET"] }] },
+    { "src": "/r/([^/]+)", "dest": "https://dos-biz-stage.vercel.app/r/$1",
+      "transforms": [{ "type": "request.headers", "op": "set", "target": { "key": "x-dos-proxy" }, "args": "$DOS_PROXY_SECRET", "env": ["DOS_PROXY_SECRET"] }] },
+    { "handle": "filesystem" },
+    { "src": "/(?!assets/|_vercel/|js/|d/|r/).*", "dest": "/index.html" }
   ]
 }
