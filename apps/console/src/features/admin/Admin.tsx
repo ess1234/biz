@@ -122,6 +122,26 @@ const AR_STATUS: Record<AuditRequest['status'], [string, string]> = {
 
 /// 진단 명령 — 운영자 PC 의 dos 폴더에서 실행. 이메일 도메인이 사이트와 같을 때만 --ai(사이트 주인 요청, biz-dev-11 DG-5)
 /// --request 를 붙여 실행하면 보고서가 이 신청에 붙어 '검토 대기'가 된다(biz-dev-13)
+/// 자동 진단(biz-dev-14): GitHub Actions audit-runner 가 2시간마다(UTC 짝수 시 17분) new 신청을 진단한다.
+/// "지금 진단"은 그 실행 화면을 연다 — 거기서 Run workflow. 콘솔에서 바로 돌리려면 dos-biz-stage 에 GITHUB_DISPATCH_TOKEN 이 필요(보류, 11-27)
+const RUNNER_URL = 'https://github.com/ess1234/dos/actions/workflows/audit-runner.yml';
+function nextAutoRun(now = new Date()): Date {
+  const t = new Date(now);
+  t.setUTCSeconds(0, 0);
+  for (let i = 0; i < 4 * 60; i++) {   // 다음 "짝수 UTC 시 17분"
+    if (t.getUTCMinutes() === 17 && t.getUTCHours() % 2 === 0 && t > now) return t;
+    t.setUTCMinutes(t.getUTCMinutes() + 1);
+  }
+  return t;
+}
+function NextRun() {
+  const n = nextAutoRun();
+  const mins = Math.max(1, Math.round((n.getTime() - Date.now()) / 60000));
+  const hm = n.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' });
+  return <span className="bc-muted" title="GitHub 예약 실행은 몇 분 늦을 수 있어요">자동 진단 2시간마다 · 다음 {hm}(약 {mins}분 뒤)</span>;
+}
+
+/// 운영자 PC 에서 직접 돌릴 때(고급) — --request 를 붙여 실행하면 보고서가 이 신청에 붙어 '검토 대기'가 된다
 const auditCommand = (r: AuditRequest) => `python scripts/site_audit.py ${r.site_url}${r.owner_match ? ' --ai' : ''} --request ${r.id}`;
 
 function NoteEdit({ value, busy, onSave }: { value: string; busy: boolean; onSave: (v: string) => void }) {
@@ -158,7 +178,8 @@ function AuditRequests({ base }: { base: string }) {
   };
   return (
     <section className="bc-sec">
-      <h3 className="bc-h3">진단 신청 <span className={`bc-badge${d?.new_count ? ' warn' : ' gray'}`}>새 신청 {d?.new_count ?? '–'}</span> <span className="bc-muted">dossai.app/business 양식 · 진단은 자동으로 돌지 않아요</span></h3>
+      <h3 className="bc-h3">진단 신청 <span className={`bc-badge${d?.new_count ? ' warn' : ' gray'}`}>새 신청 {d?.new_count ?? '–'}</span> <span className="bc-muted">biz.dossai.app 양식</span></h3>
+      <p className="bc-row bc-muted" style={{ marginTop: 0 }}><NextRun /> <a className="bc-btn small" href={RUNNER_URL} target="_blank" rel="noreferrer noopener" title="GitHub 에서 Run workflow 를 누르면 새 신청을 바로 진단해요">지금 진단 ↗</a></p>
       {d && !d.ready && <p className="bc-muted">신청 표가 아직 없어요(DB 마이그레이션 biz_0007 전). 양식은 "준비 중"으로 답해요.</p>}
       {d?.ready && (
         <>
@@ -180,13 +201,14 @@ function AuditRequests({ base }: { base: string }) {
                     {r.sent_at && <div className="bc-muted">보낸 때 {fmtDateTime(r.sent_at)}</div>}
                     {r.send_error && <div className="bc-error">발송 실패: {r.send_error}</div>}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    <button className="bc-btn small" onClick={() => copy(r)} title={auditCommand(r)}>명령 복사</button>{' '}
+                    {r.status === 'new' && <a className="bc-btn small primary" href={RUNNER_URL} target="_blank" rel="noreferrer noopener" title="GitHub 실행 화면에서 Run workflow — 새 신청을 바로 진단해요">지금 진단 ↗</a>}{' '}
                     {r.status === 'new' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'running' })}>진단 중</button>}{' '}
                     {r.has_report && <button className="bc-btn small" onClick={() => openReport(r)}>보고서 보기</button>}{' '}
                     {r.has_report && r.status === 'review' && r.email && <button className="bc-btn small primary" disabled={send.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 ${r.email} 로 보낼까요? hello@dossai.app 이름으로 나가요.`, { ok: '보내기' })) send.mutate({ id: r.id, resend: false }); }}>보내기</button>}{' '}
                     {r.has_report && r.status === 'sent' && r.email && <button className="bc-btn small" disabled={send.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 보고서를 ${r.email} 로 한 번 더 보낼까요?`, { ok: '다시 보내기' })) send.mutate({ id: r.id, resend: true }); }}>다시 보내기</button>}{' '}
                     {r.status !== 'rejected' && r.status !== 'sent' && <button className="bc-btn small" disabled={patch.isPending} onClick={() => patch.mutate({ id: r.id, status: 'rejected' })}>거절</button>}{' '}
                     <NoteEdit value={r.note ?? ''} busy={patch.isPending} onSave={(note) => patch.mutate({ id: r.id, note })} />{' '}
+                    <button className="bc-btn small ghost" onClick={() => copy(r)} title={`고급 — 운영자 PC 에서 직접 돌릴 때: ${auditCommand(r)}`}>명령 복사</button>{' '}
                     <button className="bc-btn small danger" disabled={del.isPending} onClick={async () => { if (await askConfirm(`${r.site_host} 신청을 지울까요? 신청자가 삭제를 요청했을 때 써요. 되돌릴 수 없어요.`, { ok: '지우기', danger: true })) del.mutate(r.id); }}>지우기</button>
                   </td>
                 </tr>
