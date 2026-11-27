@@ -24,6 +24,7 @@ const AdminPage = page(() => import('../features/admin/Admin'), 'AdminPage');
 const AdminAccountPage = page(() => import('../features/admin/Admin'), 'AdminAccountPage');
 const LandingPage = page(() => import('../features/site/Landing'), 'LandingPage');
 const AuditInfoPage = page(() => import('../features/site/AuditInfo'), 'AuditInfoPage');
+const CliGuidePage = page(() => import('../features/site/CliGuide'), 'CliGuidePage');
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -70,6 +71,7 @@ export function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/audit" element={<Public><AuditInfoPage /></Public>} />
+            <Route path="/cli" element={<Public><CliGuidePage /></Public>} />
             <Route path="/me/*" element={<LegacyRedirect />} />
             <Route path="/me" element={<LegacyRedirect />} />
             <Route path="/welcome" element={<RequireAuth><ErrorBoundary><Suspense fallback={<Loading />}><WelcomePage /></Suspense></ErrorBoundary></RequireAuth>} />

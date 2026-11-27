@@ -22,6 +22,10 @@ import { stat } from 'node:fs/promises';
 import { api, describe, list, rewrite, sitesList, upload, usage, visibility, wait } from '../src/agent.js';
 import { injectDir } from '../src/inject.js';
 
+// 배포용 한 파일(biz.dossai.app/cli/imagemeta.mjs)은 빌드 때 주소를 넣는다(scripts/build-cli.mjs). 저장소에서 바로 돌리면 비어 있어 --api-base 가 필요
+// eslint-disable-next-line no-undef
+const DEFAULT_API_BASE = typeof __IMAGEMETA_API_BASE__ !== 'undefined' ? __IMAGEMETA_API_BASE__ : '';
+
 const USAGE = `사용법: imagemeta <upload|wait|rewrite|list|describe|visibility|usage|sites|inject> … [--json]
   imagemeta upload public/images            imagemeta wait --timeout 600
   imagemeta rewrite src --public-dir public  imagemeta inject dist
@@ -59,7 +63,7 @@ async function main() {
   try { o = parse(process.argv.slice(2)); } catch (e) { log(e.message); process.stderr.write(USAGE + '\n'); return 2; }
   if (o.help || !o.positional.length) { process.stdout.write(USAGE + '\n'); return o.help ? 0 : 2; }
   const [cmd, ...args] = o.positional;
-  const apiBase = o.apiBase || process.env.IMAGEMETA_API_BASE;
+  const apiBase = o.apiBase || process.env.IMAGEMETA_API_BASE || DEFAULT_API_BASE;
   const apiKey = process.env.IMAGEMETA_API_KEY || '';
   const lang = o.lang || process.env.IMAGEMETA_LANG || 'ko';
   const known = ['upload', 'wait', 'rewrite', 'list', 'describe', 'visibility', 'usage', 'sites', 'inject'];
@@ -74,7 +78,7 @@ async function main() {
     switch (cmd) {
       case 'upload': {
         if (!args.length) { log('올릴 폴더나 파일을 주세요'); return 2; }
-        const r = await upload(client, { ...common, paths: args, dryRun: o.dryRun });
+        const r = await upload(client, { ...common, paths: args, dryRun: o.dryRun, log: o.json ? () => {} : log });
         out(o, r, (x) => `올림 ${x.uploaded} · 그대로 ${x.unchanged} · 이미 있음 ${x.duplicate} · 실패 ${x.failed}${x.dryRun ? ' (dry-run: ' + x.items.filter((i) => i.result === 'would-upload').length + '개 올릴 예정)' : ''}`
           + x.items.filter((i) => i.result === 'failed').map((i) => `\n  실패 ${i.path}: ${i.error}`).join(''));
         return r.failed ? 1 : 0;

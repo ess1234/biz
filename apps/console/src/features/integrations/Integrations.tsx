@@ -167,13 +167,20 @@ const SCOPES: { id: string; label: string; help: string }[] = [
   { id: 'export', label: '내보내기', help: '설명 · 원본 내보내기' },
 ];
 
+/// 용도별 권한 묶음(11-27): CLI · AI 개발 도구는 올리기 · 공개 범위까지 필요한데, 예전엔 "읽기"만 기본이라 CLI 업로드가 막혔다
+const KEY_PRESETS: { id: string; label: string; help: string; scopes: string[] }[] = [
+  { id: 'cli', label: 'CLI · AI 개발 도구', help: '이미지 올리기 · 주소 바꾸기 · 공개 범위 — Claude Code · Cursor 연동은 이것', scopes: ['assets:read', 'assets:write', 'publish'] },
+  { id: 'build', label: '빌드 연동', help: '빌드할 때 설명만 읽기', scopes: ['assets:read'] },
+];
+const sameSet = (a: Set<string>, b: string[]) => a.size === b.length && b.every((x) => a.has(x));
+
 function ApiKeysTab() {
   const { me } = useSession();
   const accountId = me!.account.id;
   const qc = useQueryClient();
   const q = useQuery({ queryKey: qk.apiKeys(accountId), queryFn: () => api.get<{ items: ApiKey[] }>(`/accounts/${accountId}/api-keys`) });
   const [label, setLabel] = useState('');
-  const [scopes, setScopes] = useState<Set<string>>(new Set(['assets:read']));
+  const [scopes, setScopes] = useState<Set<string>>(new Set(KEY_PRESETS[0].scopes));
   const [issued, setIssued] = useState<ApiKey | null>(null);
   const create = useMutation({
     mutationFn: () => api.post<ApiKey>(`/accounts/${accountId}/api-keys`, { label: label.trim() || null, scopes: [...scopes] }),
@@ -201,6 +208,13 @@ function ApiKeysTab() {
         <form className="bc-box bc-sec" onSubmit={(e) => { e.preventDefault(); if (scopes.size) create.mutate(); }}>
           <h3 className="bc-h3">새 API 키</h3>
           <label className="bc-field">이름 (선택)<input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예: 빌드 서버" maxLength={60} /></label>
+          <div className="bc-field">어디에 쓰나요</div>
+          <div className="bc-row" style={{ marginTop: 4 }}>
+            {KEY_PRESETS.map((pr) => (
+              <button key={pr.id} type="button" className={`bc-btn small${sameSet(scopes, pr.scopes) ? ' primary' : ''}`} onClick={() => setScopes(new Set(pr.scopes))} title={pr.help}>{pr.label}</button>
+            ))}
+          </div>
+          <p className="bc-muted" style={{ margin: '4px 0 0' }}>{KEY_PRESETS.find((pr) => sameSet(scopes, pr.scopes))?.help ?? '직접 고른 범위'} · <a href="/cli" target="_blank" rel="noreferrer">CLI 안내</a></p>
           <div className="bc-field">범위 — 필요한 만큼만</div>
           {SCOPES.map((s) => (
             <label key={s.id} className="bc-check" style={{ marginTop: 6 }}>

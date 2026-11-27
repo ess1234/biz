@@ -8,6 +8,7 @@ import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path';
 
 export const MANIFEST = 'imagemeta.json';
+const COMPLETE_GROUP = 4;
 const IMAGE_EXT = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.heic': 'image/heic', '.heif': 'image/heif' };
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit', '.cache', '.vercel', 'coverage']);
 const DONE = new Set(['analyzed', 'failed']);
@@ -104,7 +105,8 @@ async function imageFiles(paths, root) {
  * 파일 · 폴더를 올리고 매니페스트를 갱신한다. 같은 내용(sha256)은 다시 올리지 않는다.
  * @returns {{uploaded, unchanged, duplicate, failed, items:[{path,id,result,error?}]}}
  */
-export async function upload(client, { paths, root = process.cwd(), manifest = MANIFEST, dryRun = false, putFetch } = {}) {
+/** log(msg): 진행 상황(파일마다 · 서버 마무리) — CLI 는 stderr 로. 큰 사진은 서버 마무리(해시 · 썸네일 · 공개 사본)가 장당 몇 초 걸려 4장씩 나눠 알린다(11-27) */
+export async function upload(client, { paths, root = process.cwd(), manifest = MANIFEST, dryRun = false, putFetch, log = () => {} } = {}) {
   const mfile = resolve(root, manifest);
   const m = await loadManifest(mfile);
   const files = await imageFiles(paths, root);
@@ -138,7 +140,10 @@ export async function upload(client, { paths, root = process.cwd(), manifest = M
     if (!need.length) continue;
     const urls = await client.post('/uploads:batch', { asset_ids: need.map((r) => r.id) });
     const done = [];
+    let n = 0;
     for (const r of need) {
+      n++;
+      log(`올리는 중 ${i + n}/${todo.length} · ${r.key} (${(r.buf.length / 1e6).toFixed(1)} MB)`);
       const u = (urls.items || []).find((x) => x.asset_id === r.id);
       if (!u || u.error || !u.url) { report.failed++; report.items.push({ path: r.key, id: r.id, result: 'failed', error: u?.error?.message || '업로드 주소 없음' }); continue; }
       const res = await (putFetch || client.fetch)(u.url, { method: 'PUT', headers: { ...(u.headers || {}), ...(u.token ? { Authorization: `Bearer ${u.token}` } : {}) }, body: r.buf });
@@ -146,12 +151,17 @@ export async function upload(client, { paths, root = process.cwd(), manifest = M
       done.push(r);
     }
     if (!done.length) continue;
-    const comp = await client.post('/uploads:complete-batch', { asset_ids: done.map((r) => r.id) });
-    for (const r of done) {
-      const c = (comp.items || []).find((x) => x.id === r.id);
-      if (!c || !c.ok) { report.failed++; report.items.push({ path: r.key, id: r.id, result: 'failed', error: c?.error?.message || '완료 실패' }); continue; }
-      m.images[r.key] = { id: r.id, sha256: r.sha, bytes: r.buf.length, status: c.status || 'backed_up' };
-      report.uploaded++; report.items.push({ path: r.key, id: r.id, result: 'uploaded' });
+    for (let g = 0; g < done.length; g += COMPLETE_GROUP) {   // 서버 마무리를 4장씩 — 한 번에 오래 걸리지 않고 진행이 보이게
+      const group = done.slice(g, g + COMPLETE_GROUP);
+      log(`서버 마무리 ${Math.min(g + group.length, done.length)}/${done.length} …`);
+      const comp = await client.post('/uploads:complete-batch', { asset_ids: group.map((r) => r.id) });
+      for (const r of group) {
+        const c = (comp.items || []).find((x) => x.id === r.id);
+        if (!c || !c.ok) { report.failed++; report.items.push({ path: r.key, id: r.id, result: 'failed', error: c?.error?.message || '완료 실패' }); continue; }
+        m.images[r.key] = { id: r.id, sha256: r.sha, bytes: r.buf.length, status: c.status || 'backed_up' };
+        report.uploaded++; report.items.push({ path: r.key, id: r.id, result: 'uploaded' });
+      }
+      await saveManifest(mfile, m);   // 마무리된 만큼 바로 남긴다 — 중간에 끊겨도 다시 돌리면 이어서
     }
   }
   } finally {
